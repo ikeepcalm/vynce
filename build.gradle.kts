@@ -31,6 +31,11 @@ dependencies {
 
 application {
     mainClass.set("dev.ua.ikeepcalm.vynce.VynceApplication")
+    applicationDefaultJvmArgs = listOf("-Dfile.encoding=UTF-8")
+}
+
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
 }
 
 tasks.withType<Jar> {

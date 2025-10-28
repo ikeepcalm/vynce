@@ -10,14 +10,6 @@ import picocli.CommandLine.Command;
         mixinStandardHelpOptions = true,
         version = "Vynce Web Vulnerability Scanner v1.0.0",
         description = "Advanced web vulnerability detection tool",
-        header = """
-                @|cyan,bold ██╗   ██╗██╗   ██╗███╗   ██╗ ██████╗███████╗|@
-                @|cyan,bold ██║   ██║╚██╗ ██╔╝████╗  ██║██╔════╝██╔════╝|@
-                @|cyan,bold ██║   ██║ ╚████╔╝ ██╔██╗ ██║██║     █████╗  |@
-                @|cyan,bold ╚██╗ ██╔╝  ╚██╔╝  ██║╚██╗██║██║     ██╔══╝  |@
-                @|cyan,bold  ╚████╔╝    ██║   ██║ ╚████║╚██████╗███████╗|@
-                @|cyan,bold   ╚═══╝     ╚═╝   ╚═╝  ╚═══╝ ╚═════╝╚══════╝|@
-                """,
         footer = """
                 @|yellow Examples:|@
                   vulnscan scan https://example.com

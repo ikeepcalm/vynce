@@ -11,6 +11,13 @@ public class VynceApplication {
     public static void main(String[] args) {
         AnsiConsole.systemInstall();
 
+        for (String arg : args) {
+            if (arg.equals("-h") || arg.equals("--help")) {
+                ConsoleUI.showBanner();
+                break;
+            }
+        }
+
 //        if (args.length == 0) {
 //            ConsoleUI.showBanner();
 //        }

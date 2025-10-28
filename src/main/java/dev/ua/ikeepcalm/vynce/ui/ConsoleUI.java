@@ -73,4 +73,6 @@ public class ConsoleUI {
         System.out.println("\n" + ansi().fg(YELLOW).a("▶ " + title).reset());
         System.out.println(ansi().fg(YELLOW).a("  " + "─".repeat(title.length())).reset());
     }
+
+
 }
