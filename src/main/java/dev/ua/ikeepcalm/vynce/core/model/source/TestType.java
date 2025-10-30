@@ -1,9 +1,9 @@
-package dev.ua.ikeepcalm.vynce.core.source;
+package dev.ua.ikeepcalm.vynce.core.model.source;
 
 import lombok.Getter;
 
 @Getter
-public enum Test {
+public enum TestType {
     SQL("SQL Injection"),
     XSS("Cross-Site Scripting"),
     CSRF("Cross-Site Request Forgery"),
@@ -19,7 +19,7 @@ public enum Test {
 
     private final String displayName;
 
-    Test(String displayName) {
+    TestType(String displayName) {
         this.displayName = displayName;
     }
 

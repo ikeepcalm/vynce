@@ -6,15 +6,15 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 @Command(
-        name = "vulnscan",
+        name = "vynce",
         mixinStandardHelpOptions = true,
         version = "Vynce Web Vulnerability Scanner v1.0.0",
         description = "Advanced web vulnerability detection tool",
         footer = """
                 @|yellow Examples:|@
-                  vulnscan scan https://example.com
-                  vulnscan scan https://example.com -t SQL,XSS --threads 10
-                  vulnscan report list
+                  vynce scan https://example.com
+                  vynce scan https://example.com -t SQL,XSS --threads 10
+                  vynce report list
                 """,
         subcommands = {
                 ScanCommand.class,

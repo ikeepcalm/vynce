@@ -1,5 +1,6 @@
 # Table of Contents
 
+- **Current Status & Progress**
 - Project Overview
 - Architecture Design
 - Project Structure
@@ -9,13 +10,53 @@
 - Testing Strategy
 - Deployment & Usage
 
+---
+
+# Current Status & Progress
+
+**Last Updated:** October 30, 2025
+
+## ✅ What's Working
+
+- **Core Scanner Engine:** Fully functional with concurrent testType execution
+- **HTTP Client:** OkHttp-based wrapper with interceptors and configuration
+- **CLI Interface:** Picocli-based commands with progress bars and colored output
+- **Vulnerability Tests (4/12):**
+  - SQL Injection (error, boolean, time-based detection)
+  - XSS (reflected, attribute, JavaScript context)
+  - CSRF (form token validation)
+  - Security Headers (7 headers + information disclosure)
+- **Payload System:** JSON-based payload loading with 100+ attack vectors
+- **Build System:** Gradle with shadow JAR compilation
+
+## 🚧 In Progress
+
+- Remaining 8 vulnerability testType implementations (stubs created)
+- Web crawler for automatic endpoint discovery
+- Report generation (JSON, HTML, CSV, Markdown)
+
+## 📊 Completion Status
+
+| Phase | Status | Completion |
+|-------|--------|-----------|
+| Phase 1: Foundation | ✅ Complete | 100% |
+| Phase 2: Core Engine | ✅ Complete | 100% |
+| Phase 3: Web Crawler | ⏸️ Pending | 0% |
+| Phase 4: Vulnerability Tests | 🚧 In Progress | 33% (4/12 testTypes) |
+| Phase 5: Reporting | ⏸️ Pending | 0% |
+| Phase 6: Polish & Testing | ⏸️ Pending | 0% |
+
+**Overall Project Completion: ~40%**
+
+---
+
 # Project Overview
 
 ## Goals
 
 - Build a modular CLI-based web vulnerability scanner in Java
 - Implement detection for common vulnerabilities (SQL injection, XSS, CSRF, etc.)
-- Provide extensible plugin architecture for adding new tests
+- Provide extensible plugin architecture for adding new testTypes
 - Generate comprehensive reports in multiple formats
 - Follow specifications from technical documentation
 
@@ -63,99 +104,115 @@
 
 ## Project Structure
 
+### Actual Implementation
+
 ```
-vynce-scanner/
+Vynce/
 ├── build.gradle.kts
 ├── settings.gradle.kts
 ├── README.md
 ├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── CONTRIBUTING.md
-│   └── API.md
+│   └── ROADMAP.md
 ├── src/
 │   ├── main/
-│   │   ├── java/
-│   │   │   └── dev/ua/ikeepcalm/vynce
-│   │   │       ├── VulnScanApplication.java
-│   │   │       ├── cli/                      # CLI commands
-│   │   │       │   ├── MainCommand.java
-│   │   │       │   ├── ScanCommand.java
-│   │   │       │   ├── ReportCommand.java
-│   │   │       │   └── validators/
-│   │   │       │       └── UrlValidator.java
-│   │   │       ├── core/                     # Core engine
-│   │   │       │   ├── Scanner.java
-│   │   │       │   ├── ScanConfig.java
-│   │   │       │   ├── ScanContext.java
-│   │   │       │   └── ThreadPoolManager.java
-│   │   │       ├── http/                     # HTTP handling
-│   │   │       │   ├── HttpClient.java
-│   │   │       │   ├── RequestBuilder.java
-│   │   │       │   ├── ResponseAnalyzer.java
-│   │   │       │   └── CookieManager.java
-│   │   │       ├── plugins/                  # Plugin system
-│   │   │       │   ├── PluginLoader.java
-│   │   │       │   ├── VulnerabilityTest.java
-│   │   │       │   └── TestResult.java
-│   │   │       ├── tests/                    # Vulnerability tests
-│   │   │       │   ├── sql/
-│   │   │       │   │   ├── SqlInjectionTest.java
-│   │   │       │   │   └── payloads.json
-│   │   │       │   ├── xss/
-│   │   │       │   │   ├── XssTest.java
-│   │   │       │   │   └── payloads.json
-│   │   │       │   ├── csrf/
-│   │   │       │   │   └── CsrfTest.java
-│   │   │       │   └── headers/
-│   │   │       │       └── SecurityHeadersTest.java
-│   │   │       ├── crawler/                  # Web crawler
-│   │   │       │   ├── WebCrawler.java
-│   │   │       │   ├── LinkExtractor.java
-│   │   │       │   └── FormAnalyzer.java
-│   │   │       ├── report/                   # Report generation
-│   │   │       │   ├── ReportGenerator.java
-│   │   │       │   ├── HtmlReporter.java
-│   │   │       │   ├── JsonReporter.java
-│   │   │       │   └── templates/
-│   │   │       └── ui/                       # UI utilities
-│   │   │           ├── ConsoleUI.java
-│   │   │           └── ProgressTracker.java
+│   │   ├── java/dev/ua/ikeepcalm/vynce/
+│   │   │   ├── VynceApplication.java         # Main entry point
+│   │   │   ├── cli/                          # CLI commands ✅
+│   │   │   │   ├── MainCommand.java
+│   │   │   │   ├── ScanCommand.java
+│   │   │   │   └── report/
+│   │   │   │       ├── ReportCommand.java
+│   │   │   │       ├── ReportListCommand.java
+│   │   │   │       ├── ReportViewCommand.java
+│   │   │   │       └── ReportExportCommand.java
+│   │   │   ├── core/                         # Core engine ✅
+│   │   │   │   ├── Scanner.java              # Orchestrates testType execution
+│   │   │   │   ├── ScanConfig.java           # Configuration builder
+│   │   │   │   ├── ScanContext.java          # Shared testType context
+│   │   │   │   ├── ScanResult.java           # Result aggregation
+│   │   │   │   ├── Vulnerability.java        # Vulnerability model
+│   │   │   │   └── source/
+│   │   │   │       ├── Test.java             # Test type enum
+│   │   │   │       └── Severity.java         # Severity enum
+│   │   │   ├── http/                         # HTTP handling ✅
+│   │   │   │   ├── VynceHttpClient.java      # OkHttp wrapper
+│   │   │   │   ├── UserAgentInterceptor.java
+│   │   │   │   └── RateLimitInterceptor.java
+│   │   │   ├── testTypes/                        # Test framework ✅
+│   │   │   │   ├── VulnerabilityTest.java    # Test interface
+│   │   │   │   ├── BaseVulnerabilityTest.java
+│   │   │   │   ├── TestFactory.java          # Factory pattern
+│   │   │   │   └── impl/                     # Test implementations
+│   │   │   │       ├── SqlInjectionTest.java      ✅
+│   │   │   │       ├── XssTest.java               ✅
+│   │   │   │       ├── CsrfTest.java              ✅
+│   │   │   │       ├── SecurityHeadersTest.java   ✅
+│   │   │   │       ├── SsrfTest.java              (stub)
+│   │   │   │       ├── XxeTest.java               (stub)
+│   │   │   │       ├── PathTraversalTest.java     (stub)
+│   │   │   │       ├── CommandInjectionTest.java  (stub)
+│   │   │   │       ├── LdapInjectionTest.java     (stub)
+│   │   │   │       ├── XpathInjectionTest.java    (stub)
+│   │   │   │       ├── CorsTest.java              (stub)
+│   │   │   │       └── OpenRedirectTest.java      (stub)
+│   │   │   ├── utils/                        # Utilities ✅
+│   │   │   │   └── PayloadLoader.java        # JSON payload loader
+│   │   │   └── ui/                           # UI utilities ✅
+│   │   │       ├── ConsoleUI.java            # Colored output
+│   │   │       └── ScanProgress.java         # Progress bars
 │   │   └── resources/
 │   │       ├── logback.xml
-│   │       ├── payloads/                     # Attack payloads
-│   │       │   ├── sql-injections.json
-│   │       │   ├── xss-vectors.json
-│   │       │   └── common-passwords.txt
-│   │       └── templates/                    # Report templates
-│   │           └── report.html
-│   └── test/
-│       └── java/
-│           └── com/vulnscan/
-│               ├── core/
-│               └── tests/
-└── gradle/
-└── libs.versions.toml
+│   │       ├── payloads/                     # Attack payloads ✅
+│   │       │   ├── sql-injection.json        # 60+ payloads
+│   │       │   └── xss-vectors.json          # 40+ vectors
+│   │       └── signatures/
+│   │           └── default.json              (empty)
+│   └── testType/
+│       └── java/                             (no testTypes yet)
+└── build/
+    └── libs/
+        └── Vynce-1.0.0-all.jar              # Executable JAR
+
+Legend:
+✅ = Fully implemented
+(stub) = Interface created, implementation pending
 ```
+
+### Planned vs Actual
+
+**Differences from original plan:**
+- Tests organized under `testTypes/impl/` instead of separate directories per testType
+- PayloadLoader utility added for JSON payload management
+- Report generation deferred to Phase 5
+- Web crawler deferred to Phase 3
 
 ## Implementation Roadmap
 
-# Phase 1: Foundation (Week 1)
+### Phase 1: Foundation ✅ COMPLETED
 
-- [ ] Set up project structure
-- [ ] Configure Gradle build
-- [ ] Implement CLI framework with Picocli
-- [ ] Create basic UI\/UX with colored output
-- [ ] Implement URL validation and connectivity check
+- [x] Set up project structure
+- [x] Configure Gradle build
+- [x] Implement CLI framework with Picocli
+- [x] Create basic UI/UX with colored output
+- [x] Implement URL validation and connectivity check
 
-### Phase 2: Core Engine (Week 2)
+### Phase 2: Core Engine ✅ COMPLETED
 
-- [ ] Build HTTP client wrapper with OkHttp
-- [ ] Implement thread pool management
-- [ ] Create scan context and configuration
-- [ ] Build plugin loader mechanism
-- [ ] Implement result aggregation
+- [x] Build HTTP client wrapper with OkHttp
+- [x] Implement thread pool management
+- [x] Create scan context and configuration
+- [x] Build plugin loader mechanism (TestFactory)
+- [x] Implement result aggregation
 
-### Phase 3: Web Crawler (Week 3)
+**Implemented Components:**
+- `VynceHttpClient` with UserAgent and RateLimit interceptors
+- `ScanContext` for shared testType context
+- `ScanConfig` builder pattern for configuration
+- `TestFactory` for testType instantiation
+- `BaseVulnerabilityTest` abstract base class
+- `PayloadLoader` for JSON payload loading
+
+### Phase 3: Web Crawler (Week 3) - PENDING
 
 - [ ] Implement basic web crawler
 - [ ] Extract links and forms
@@ -163,36 +220,72 @@ vynce-scanner/
 - [ ] Handle different content types
 - [ ] Implement crawl depth control
 
-### Phase 4: Vulnerability Tests (Weeks 4-5)
+### Phase 4: Vulnerability Tests (Weeks 4-5) - PARTIALLY COMPLETED
 
-- [ ] SQL Injection detection
-- [ ] XSS detection
-- [ ] CSRF detection
-- [ ] Security headers analysis
-- [ ] Directory traversal detection
-- [ ] Open redirect detection
+**Completed Tests:**
+- [x] SQL Injection detection (error-based, boolean-based, time-based)
+- [x] XSS detection (reflected, attribute-based, JavaScript context)
+- [x] CSRF detection (form token validation)
+- [x] Security headers analysis (7 headers + information disclosure)
 
-### Phase 5: Reporting (Week 6)
+**Pending Tests:**
+- [ ] SSRF detection (stub created)
+- [ ] XXE detection (stub created)
+- [ ] Directory traversal detection (stub created)
+- [ ] Path traversal detection (stub created)
+- [ ] Command injection detection (stub created)
+- [ ] LDAP injection detection (stub created)
+- [ ] XPath injection detection (stub created)
+- [ ] CORS misconfiguration detection (stub created)
+- [ ] Open redirect detection (stub created)
+
+**Payload Files Created:**
+- `sql-injection.json`: 60+ payloads and error patterns
+- `xss-vectors.json`: 40+ attack vectors
+
+### Phase 5: Reporting (Week 6) - PENDING
 
 - [ ] JSON report generator
 - [ ] HTML report with visualizations
 - [ ] CSV export
-- [ ] Integration with CI\/CD pipelines
+- [ ] Markdown export
+- [ ] Integration with CI/CD pipelines
 
-### Phase 6: Polish & Testing (Week 7)
+**Current Status:** Console output only
 
-- [ ] Unit tests
-- [ ] Integration tests
+### Phase 6: Polish & Testing (Week 7) - PENDING
+
+- [ ] Unit testTypes
+- [ ] Integration testTypes
 - [ ] Performance optimization
 - [ ] Documentation
 - [ ] Docker containerization
+
+## Current Implementation Status
+
+**Working Features:**
+- ✅ CLI interface with Picocli
+- ✅ HTTP client with OkHttp (interceptors, timeouts, redirects)
+- ✅ Concurrent testType execution with thread pool
+- ✅ Progress tracking with progress bars
+- ✅ 4 fully functional vulnerability testTypes
+- ✅ Payload loading from JSON files
+- ✅ Console output with colored formatting
+- ✅ Severity-based vulnerability categorization
+
+**Next Steps:**
+1. Implement web crawler for automatic endpoint discovery
+2. Complete remaining vulnerability testTypes
+3. Add report generation (JSON, HTML, CSV)
+4. Write comprehensive testType suite
+5. Add authentication support (OAuth, JWT, Basic Auth)
 
 # Core Components Development
 
 1. HTTP Client Implementation
 
 ```java
-package com.vulnscan.http;
+package com.vynce.http;
 
 import okhttp3.*;
 
@@ -201,11 +294,11 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class VulnScanHttpClient {
+public class vynceHttpClient {
     private final OkHttpClient client;
     private final CookieJar cookieJar;
 
-    public VulnScanHttpClient(ScanConfig config) {
+    public vynceHttpClient(ScanConfig config) {
         this.cookieJar = new MemoryCookieJar();
         this.client = new OkHttpClient.Builder()
                 .connectTimeout(config.getTimeout(), TimeUnit.SECONDS)
@@ -241,7 +334,7 @@ public class VulnScanHttpClient {
 2. Plugin System
 
 ```java
-package com.vulnscan.plugins;
+package com.vynce.plugins;
 
 import java.util.ServiceLoader;
 import java.util.List;
@@ -252,36 +345,36 @@ public class PluginLoader {
             ServiceLoader.load(VulnerabilityTest.class);
 
     public static List<VulnerabilityTest> loadTests(List<TestType> enabledTests) {
-        List<VulnerabilityTest> tests = new ArrayList<>();
+        List<VulnerabilityTest> testTypes = new ArrayList<>();
 
-        for (VulnerabilityTest test : loader) {
-            if (enabledTests.contains(test.getType())) {
-                tests.add(test);
+        for (VulnerabilityTest testType : loader) {
+            if (enabledTests.contains(testType.getType())) {
+                testTypes.add(testType);
             }
         }
 
-        // Load built-in tests if no plugins found
-        if (tests.isEmpty()) {
-            tests.addAll(loadBuiltInTests(enabledTests));
+        // Load built-in testTypes if no plugins found
+        if (testTypes.isEmpty()) {
+            testTypes.addAll(loadBuiltInTests(enabledTests));
         }
 
-        return tests;
+        return testTypes;
     }
 
     private static List<VulnerabilityTest> loadBuiltInTests(List<TestType> types) {
-        List<VulnerabilityTest> tests = new ArrayList<>();
+        List<VulnerabilityTest> testTypes = new ArrayList<>();
 
         for (TestType type : types) {
             switch (type) {
-                case SQL -> tests.add(new SqlInjectionTest());
-                case XSS -> tests.add(new XssTest());
-                case CSRF -> tests.add(new CsrfTest());
-                case HEADERS -> tests.add(new SecurityHeadersTest());
-                // Add more tests
+                case SQL -> testTypes.add(new SqlInjectionTest());
+                case XSS -> testTypes.add(new XssTest());
+                case CSRF -> testTypes.add(new CsrfTest());
+                case HEADERS -> testTypes.add(new SecurityHeadersTest());
+                // Add more testTypes
             }
         }
 
-        return tests;
+        return testTypes;
     }
 }
 ```
@@ -291,9 +384,9 @@ public class PluginLoader {
 1. SQL Injection Detection
 
 ```java
-package com.vulnscan.tests.sql;
+package com.vynce.testTypes.sql;
 
-import com.vulnscan.plugins.BaseVulnerabilityTest;
+import com.vynce.plugins.BaseVulnerabilityTest;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -407,7 +500,7 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
 2. XSS Detection
 
 ```java
-package com.vulnscan.tests.xss;
+package com.vynce.testTypes.xss;
 
 public class XssTest extends BaseVulnerabilityTest {
     private static final List<String> XSS_PAYLOADS = List.of(
@@ -479,7 +572,7 @@ public class XssTest extends BaseVulnerabilityTest {
 3. Security Headers Test
 
 ```java
-package com.vulnscan.tests.headers;
+package com.vynce.testTypes.headers;
 
 public class SecurityHeadersTest extends BaseVulnerabilityTest {
     private static final Map<String, String> REQUIRED_HEADERS = Map.of(
@@ -548,8 +641,8 @@ cd vynce-scanner
 # Create executable JAR
 ./gradlew shadowJar
 
-# Run tests
-./gradlew test
+# Run testTypes
+./gradlew testType
 ```
 
 ## Basic Usage
@@ -558,7 +651,7 @@ cd vynce-scanner
 # Basic scan
 java -jar vynce-scanner.jar scan https://target.com
 
-# Scan with specific tests
+# Scan with specific testTypes
 java -jar vynce-scanner.jar scan https://target.com -t SQL,XSS --threads 10
 
 # Scan with authentication
@@ -579,11 +672,11 @@ java -jar vynce-scanner.jar scan https://target.com \
 
 ## Priority 1 (Essential)
 
-- Implement remaining vulnerability tests
+- Implement remaining vulnerability testTypes
 - Add authentication mechanisms (OAuth, JWT, Basic)
 - Implement rate limiting to avoid DoS
 - Add session management
-- Create comprehensive test suite
+- Create comprehensive testType suite
 
 ## Priority 2 (Important)
 
@@ -598,5 +691,5 @@ java -jar vynce-scanner.jar scan https://target.com \
 - Machine learning for false positive reduction
 - Distributed scanning capabilities
 - Integration with bug bounty platforms
-- Custom scripting language for tests
+- Custom scripting language for testTypes
 - Real-time collaboration features

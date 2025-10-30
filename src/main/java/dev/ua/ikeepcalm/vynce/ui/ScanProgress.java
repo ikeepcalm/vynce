@@ -17,7 +17,7 @@ public class ScanProgress {
         this.progressBar = new ProgressBarBuilder()
                 .setTaskName("Scanning")
                 .setInitialMax(totalTests)
-                .setStyle(ProgressBarStyle.COLORFUL_UNICODE_BLOCK)
+                .setStyle(ProgressBarStyle.ASCII)
                 .setUpdateIntervalMillis(100)
                 .showSpeed()
                 .build();

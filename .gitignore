@@ -2,10 +2,11 @@
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
-!**/src/test/**/build/
+!**/src/testType/**/build/
 .kotlin
 .idea/
 .claude/
+CLAUDE.md
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
@@ -17,7 +18,7 @@ build/
 *.ipr
 out/
 !**/src/main/**/out/
-!**/src/test/**/out/
+!**/src/testType/**/out/
 
 ### Eclipse ###
 .apt_generated
@@ -29,7 +30,7 @@ out/
 .sts4-cache
 bin/
 !**/src/main/**/bin/
-!**/src/test/**/bin/
+!**/src/testType/**/bin/
 
 ### NetBeans ###
 /nbproject/private/

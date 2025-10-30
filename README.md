@@ -17,16 +17,16 @@ The name comes as a play on the word “Vince” (a name derived from Vincent, m
 
 ```bash
 # Show help
-java -jar vulnscan.jar --help
+java -jar vynce.jar --help
 
 # Run a scan
-java -jar vulnscan.jar scan https://example.com
+java -jar vynce.jar scan https://example.com
 
-# Run with specific tests
-java -jar vulnscan.jar scan https://example.com -t SQL,XSS,CSRF
+# Run with specific testTypes
+java -jar vynce.jar scan https://example.com -t SQL,XSS,CSRF
 
 # List reports
-java -jar vulnscan.jar report list
+java -jar vynce.jar report list
 ```
 
 ## License

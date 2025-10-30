@@ -1,9 +1,9 @@
 package dev.ua.ikeepcalm.vynce.cli;
 
-import dev.ua.ikeepcalm.vynce.core.ScanResult;
-import dev.ua.ikeepcalm.vynce.core.Scanner;
-import dev.ua.ikeepcalm.vynce.core.Vulnerability;
-import dev.ua.ikeepcalm.vynce.core.source.Test;
+import dev.ua.ikeepcalm.vynce.core.model.ScanResult;
+import dev.ua.ikeepcalm.vynce.core.service.Scanner;
+import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
+import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 import dev.ua.ikeepcalm.vynce.ui.ScanProgress;
 import picocli.CommandLine;
@@ -38,13 +38,13 @@ public class ScanCommand implements Callable<Integer> {
             description = "Tests to run: ${COMPLETION-CANDIDATES} (default: all)",
             split = ",",
             paramLabel = "<TEST>")
-    private List<Test> tests;
+    private List<TestType> testTypes;
 
     @Option(names = {"-x", "--exclude"},
             description = "Tests to exclude",
             split = ",",
             paramLabel = "<TEST>")
-    private List<Test> excludeTests = new ArrayList<>();
+    private List<TestType> excludeTestTypes = new ArrayList<>();
 
     @Option(names = {"--threads"},
             description = "Number of threads (1-10, default: 5)",
@@ -86,6 +86,8 @@ public class ScanCommand implements Callable<Integer> {
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
+    @CommandLine.ParentCommand
+    private MainCommand parent;
 
     public enum OutputFormat {
         JSON, HTML, XML, CSV, MARKDOWN
@@ -93,6 +95,11 @@ public class ScanCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
+        // Set verbose mode from parent command
+        if (parent != null && parent.verbose) {
+            ConsoleUI.setVerbose(true);
+        }
+
         ConsoleUI.printSection("VULNERABILITY SCAN");
 
         ConsoleUI.info("Validating target URL...");
@@ -105,17 +112,17 @@ public class ScanCommand implements Callable<Integer> {
             return 1;
         }
 
-        if (tests == null || tests.isEmpty()) {
-            tests = Arrays.asList(Test.values());
+        if (testTypes == null || testTypes.isEmpty()) {
+            testTypes = Arrays.asList(TestType.values());
         }
-        tests.removeAll(excludeTests);
+        testTypes.removeAll(excludeTestTypes);
 
         displayConfiguration();
 
         ConsoleUI.success("Target is accessible. Starting scan...");
 
-        ScanProgress progress = new ScanProgress(tests.size());
-        Scanner scanner = new Scanner(targetUrl, tests, threads);
+        ScanProgress progress = new ScanProgress(testTypes.size());
+        Scanner scanner = new Scanner(targetUrl, testTypes, threads);
         ScanResult result = scanner.scanWithProgress(progress);
 
         displayResults(result);
@@ -145,7 +152,7 @@ public class ScanCommand implements Callable<Integer> {
     private void displayConfiguration() {
         ConsoleUI.printSubSection("Scan Configuration");
         System.out.println("  Target:          " + targetUrl);
-        System.out.println("  Tests:           " + tests.size() + " selected");
+        System.out.println("  Tests:           " + testTypes.size() + " selected");
         System.out.println("  Threads:         " + threads);
         System.out.println("  Crawl Depth:     " + depth);
         System.out.println("  Timeout:         " + timeout + "s");

@@ -17,7 +17,7 @@ import java.util.concurrent.Callable;
 public class ReportCommand implements Callable<Integer> {
     @Override
     public Integer call() {
-        ConsoleUI.info("Use 'vulnscan report --help' for available commands");
+        ConsoleUI.info("Use 'vynce report --help' for available commands");
         return 0;
     }
 }

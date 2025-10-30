@@ -1,13 +1,19 @@
 package dev.ua.ikeepcalm.vynce.ui;
 
-import dev.ua.ikeepcalm.vynce.core.source.Severity;
-import dev.ua.ikeepcalm.vynce.core.source.Test;
+import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
+import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
+import lombok.Getter;
+import lombok.Setter;
 
 import static org.fusesource.jansi.Ansi.Color;
 import static org.fusesource.jansi.Ansi.Color.*;
 import static org.fusesource.jansi.Ansi.ansi;
 
 public class ConsoleUI {
+
+    @Getter
+    @Setter
+    private static boolean verbose = false;
 
     public static void showBanner() {
         System.out.println(ansi().eraseScreen().cursor(1, 1));
@@ -45,7 +51,7 @@ public class ConsoleUI {
                 .fg(RED).a(message).reset());
     }
 
-    public static void vulnerability(Test type, Severity severity, String message) {
+    public static void vulnerability(TestType type, Severity severity, String message) {
         Color color = switch (severity) {
             case CRITICAL -> RED;
             case HIGH -> MAGENTA;
@@ -74,5 +80,16 @@ public class ConsoleUI {
         System.out.println(ansi().fg(YELLOW).a("  " + "─".repeat(title.length())).reset());
     }
 
+    public static void debug(String message) {
+        if (verbose) {
+            System.out.println(ansi().fg(Color.WHITE).a("[DEBUG] ").reset().a(message));
+        }
+    }
+
+    public static void debug(String format, Object... args) {
+        if (verbose) {
+            System.out.println(ansi().fg(Color.WHITE).a("[DEBUG] ").reset().a(String.format(format, args)));
+        }
+    }
 
 }

@@ -1,6 +1,6 @@
-package dev.ua.ikeepcalm.vynce.core;
+package dev.ua.ikeepcalm.vynce.core.model;
 
-import dev.ua.ikeepcalm.vynce.core.source.Severity;
+import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import lombok.Getter;
 import lombok.Setter;
 
