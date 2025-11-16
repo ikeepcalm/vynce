@@ -9,6 +9,7 @@ public class ScanProgress {
     private ProgressBar progressBar;
     private int totalTests;
     private int completed;
+    private volatile int vulnerabilitiesFound = 0;
 
     public ScanProgress(int totalTests) {
         this.totalTests = totalTests;
@@ -25,12 +26,28 @@ public class ScanProgress {
 
     public void update(String testName) {
         progressBar.step();
-        progressBar.setExtraMessage(testName);
+        updateMessage(testName);
         completed++;
+    }
+
+    /**
+     * FR-9: Update vulnerability count in real-time
+     */
+    public void updateVulnerabilityCount(int count) {
+        this.vulnerabilitiesFound = count;
+        updateMessage(progressBar.getExtraMessage());
+    }
+
+    private void updateMessage(String testName) {
+        int percentage = (int) ((completed * 100.0) / totalTests);
+        String message = String.format("%s | %d%% | Found: %d",
+            testName, percentage, vulnerabilitiesFound);
+        progressBar.setExtraMessage(message);
     }
 
     public void complete() {
         progressBar.close();
-        ConsoleUI.success("Scan completed! (" + completed + "/" + totalTests + " tests)");
+        ConsoleUI.success("Scan completed! (" + completed + "/" + totalTests + " tests, " +
+                         vulnerabilitiesFound + " vulnerabilities found)");
     }
 }

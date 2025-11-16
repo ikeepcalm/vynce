@@ -5,6 +5,7 @@ import dev.ua.ikeepcalm.vynce.core.model.ScanConfig;
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
 import dev.ua.ikeepcalm.vynce.core.model.ScanResult;
 import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
+import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.TestFactory;
 import dev.ua.ikeepcalm.vynce.tests.VulnerabilityTest;
@@ -22,6 +23,8 @@ public class Scanner {
     private final List<TestType> testTypes;
     private final ScanConfig config;
     private final ScanContext context;
+    private volatile boolean stopping = false;
+    private ExecutorService executor;
 
     public Scanner(String targetUrl, List<TestType> testTypes, int threads) {
         this(targetUrl, testTypes, ScanConfig.builder().threads(threads).build());
@@ -33,28 +36,49 @@ public class Scanner {
         this.context = new ScanContext(targetUrl, config);
     }
 
+    /**
+     * Stop the scan gracefully
+     */
+    public void stop() {
+        stopping = true;
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdownNow();
+        }
+    }
+
     public ScanResult scanWithProgress(ScanProgress progress) {
         ScanResult result = new ScanResult();
         long startTime = System.currentTimeMillis();
+
+        if (stopping) {
+            ConsoleUI.warning("Scan stopped before starting");
+            return result;
+        }
 
         // Initialize crawler first
         ConsoleUI.info("Initializing web crawler...");
         context.initializeCrawler();
 
-        ExecutorService executor = Executors.newFixedThreadPool(config.getThreads());
+        executor = Executors.newFixedThreadPool(config.getThreads());
         List<Future<List<Vulnerability>>> futures = new ArrayList<>();
 
         try {
             for (TestType testType : testTypes) {
-                futures.add(executor.submit(() -> runTest(testType, progress)));
+                if (stopping) break;
+                futures.add(executor.submit(() -> runTest(testType, progress, result)));
             }
 
             for (Future<List<Vulnerability>> future : futures) {
+                if (stopping) break;
                 try {
-                    result.addVulnerabilities(future.get());
+                    List<Vulnerability> vulns = future.get();
+                    result.addVulnerabilities(vulns);
+                    progress.updateVulnerabilityCount(result.getVulnerabilities().size());
                 } catch (Exception e) {
-                    ConsoleUI.error("Test execution failed: " + e.getMessage());
-                    ConsoleUI.debug("Stack trace: %s", e);
+                    if (!stopping) {
+                        ConsoleUI.error("Test execution failed: " + e.getMessage());
+                        ConsoleUI.debug("Stack trace: %s", e);
+                    }
                 }
             }
 
@@ -70,7 +94,11 @@ public class Scanner {
         return result;
     }
 
-    private List<Vulnerability> runTest(TestType testType, ScanProgress progress) {
+    private List<Vulnerability> runTest(TestType testType, ScanProgress progress, ScanResult result) {
+        if (stopping) {
+            return new ArrayList<>();
+        }
+
         progress.update(testType.getDisplayName());
 
         try {
@@ -81,16 +109,26 @@ public class Scanner {
 
             if (!vulnerabilities.isEmpty()) {
                 for (Vulnerability vuln : vulnerabilities) {
-                    ConsoleUI.vulnerability(testType, vuln.getSeverity(),
-                            vuln.getDescription());
+                    // FR-10: Immediate notification of critical vulnerabilities
+                    if (vuln.getSeverity() == Severity.CRITICAL) {
+                        ConsoleUI.error("⚠️  CRITICAL VULNERABILITY FOUND!");
+                        ConsoleUI.vulnerability(testType, vuln.getSeverity(),
+                                vuln.getDescription());
+                        ConsoleUI.error("Location: " + vuln.getUrl());
+                    } else {
+                        ConsoleUI.vulnerability(testType, vuln.getSeverity(),
+                                vuln.getDescription());
+                    }
                 }
             }
 
             return vulnerabilities;
 
         } catch (Exception e) {
-            ConsoleUI.error("Error running test " + testType + ": " + e.getMessage());
-            ConsoleUI.debug("Stack trace: %s", e);
+            if (!stopping) {
+                ConsoleUI.error("Error running test " + testType + ": " + e.getMessage());
+                ConsoleUI.debug("Stack trace: %s", e);
+            }
             return new ArrayList<>();
         }
     }

@@ -88,6 +88,12 @@ public class ScanCommand implements Callable<Integer> {
             defaultValue = "Vynce Scanner/1.0")
     private String userAgent;
 
+    @Option(names = {"--delay"},
+            description = "Delay between requests in milliseconds (default: 0)",
+            defaultValue = "0",
+            paramLabel = "<MS>")
+    private int requestDelay;
+
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -126,8 +132,22 @@ public class ScanCommand implements Callable<Integer> {
 
         ConsoleUI.success("Target is accessible. Starting scan...");
 
+        // Build scan configuration
+        ScanConfig config = ScanConfig.builder()
+                .threads(threads)
+                .crawlDepth(depth)
+                .timeout(timeout)
+                .followRedirects(followRedirects)
+                .userAgent(userAgent)
+                .requestDelay(requestDelay)
+                .build();
+
+        // Setup graceful shutdown
         ScanProgress progress = new ScanProgress(testTypes.size());
-        Scanner scanner = new Scanner(targetUrl, testTypes, threads);
+        Scanner scanner = new Scanner(targetUrl, testTypes, config);
+
+        setupShutdownHook(scanner, progress);
+
         ScanResult result = scanner.scanWithProgress(progress);
 
         displayResults(result);
@@ -161,7 +181,17 @@ public class ScanCommand implements Callable<Integer> {
         System.out.println("  Threads:         " + threads);
         System.out.println("  Crawl Depth:     " + depth);
         System.out.println("  Timeout:         " + timeout + "s");
+        System.out.println("  Request Delay:   " + requestDelay + "ms");
         System.out.println("  User-Agent:      " + userAgent);
+    }
+
+    private void setupShutdownHook(Scanner scanner, ScanProgress progress) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            ConsoleUI.warning("\nScan interrupted by user. Cleaning up...");
+            scanner.stop();
+            progress.complete();
+            ConsoleUI.info("Scan stopped. Partial results may be available.");
+        }));
     }
 
     private boolean checkConnectivity() {
