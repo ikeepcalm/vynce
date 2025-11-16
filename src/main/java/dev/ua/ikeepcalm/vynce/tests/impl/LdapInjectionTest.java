@@ -1,11 +1,39 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
+import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
+import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
-import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
+import okhttp3.Response;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class LdapInjectionTest extends BaseVulnerabilityTest {
+
+    private static final List<String> LDAP_PAYLOADS = Arrays.asList(
+            "*",
+            "*)(uid=*",
+            "admin*",
+            "admin)(&(password=*",
+            "*)(|(uid=*",
+            "*)(&(objectClass=*",
+            "*))%00",
+            "admin)(|(password=*",
+            "*)(cn=*)(|(cn=*"
+    );
+
+    private static final List<String> LDAP_ERROR_INDICATORS = Arrays.asList(
+            "javax.naming.NameNotFoundException",
+            "LDAPException",
+            "com.sun.jndi.ldap",
+            "[LDAP:",
+            "Invalid DN syntax",
+            "LDAP: error code"
+    );
 
     @Override
     public TestType getTestType() {
@@ -14,7 +42,60 @@ public class LdapInjectionTest extends BaseVulnerabilityTest {
 
     @Override
     protected void runTests(ScanContext context) throws Exception {
-        // TODO: Implement LDAP injection detection
-        ConsoleUI.error("LDAP injection test not yet implemented");
+        // Test URL parameters
+        for (String url : context.getCrawler().getUrlsWithParams()) {
+            Map<String, String> params = extractParams(url);
+            for (String paramName : params.keySet()) {
+                testLdapInjection(context, url, paramName);
+            }
+        }
+    }
+
+    private void testLdapInjection(ScanContext context, String url, String paramName) {
+        for (String payload : LDAP_PAYLOADS) {
+            try {
+                String testUrl = injectPayload(url, paramName, encodeUrl(payload));
+                Response response = context.getHttpClient().get(testUrl, Collections.emptyMap());
+
+                if (response.isSuccessful()) {
+                    String body = response.body() != null ? response.body().string() : "";
+
+                    // Check for LDAP error messages
+                    if (containsLdapErrorIndicators(body)) {
+                        addVulnerability(new Vulnerability(
+                                Severity.HIGH,
+                                "LDAP Injection",
+                                "Parameter '" + paramName + "' may be vulnerable to LDAP injection",
+                                url,
+                                payload
+                        ));
+                        break;
+                    }
+
+                    // Check for different response with wildcard
+                    if (payload.equals("*") && body.length() > 1000) {
+                        addVulnerability(new Vulnerability(
+                                Severity.MEDIUM,
+                                "Possible LDAP Injection",
+                                "Parameter '" + paramName + "' shows different response with LDAP wildcard",
+                                url,
+                                payload
+                        ));
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore errors
+            }
+        }
+    }
+
+    private boolean containsLdapErrorIndicators(String body) {
+        for (String indicator : LDAP_ERROR_INDICATORS) {
+            if (body.contains(indicator)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

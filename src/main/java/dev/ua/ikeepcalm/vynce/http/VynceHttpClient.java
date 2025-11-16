@@ -82,6 +82,11 @@ public class VynceHttpClient {
         return client.newCall(request).execute();
     }
 
+    public Response executeRequest(Request request) throws IOException {
+        ConsoleUI.debug(request.method() + " " + request.url());
+        return client.newCall(request).execute();
+    }
+
     public String getBodyAsString(Response response) throws IOException {
         ResponseBody body = response.body();
         return body != null ? body.string() : "";

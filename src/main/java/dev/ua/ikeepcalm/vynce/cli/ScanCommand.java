@@ -4,6 +4,8 @@ import dev.ua.ikeepcalm.vynce.core.model.ScanResult;
 import dev.ua.ikeepcalm.vynce.core.service.Scanner;
 import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
+import dev.ua.ikeepcalm.vynce.report.ReportFactory;
+import dev.ua.ikeepcalm.vynce.report.ReportGenerator;
 import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 import dev.ua.ikeepcalm.vynce.ui.ScanProgress;
 import picocli.CommandLine;
@@ -11,11 +13,14 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -90,7 +95,7 @@ public class ScanCommand implements Callable<Integer> {
     private MainCommand parent;
 
     public enum OutputFormat {
-        JSON, HTML, XML, CSV, MARKDOWN
+        JSON, HTML, MARKDOWN
     }
 
     @Override
@@ -209,8 +214,32 @@ public class ScanCommand implements Callable<Integer> {
     }
 
     private void saveResults(ScanResult result) {
-        ConsoleUI.info("Saving results to: " + outputFile);
-        // Implementation stub
-        ConsoleUI.success("Results saved successfully");
+        try {
+            ConsoleUI.info("Generating " + format.name() + " report...");
+
+            // Map OutputFormat to ReportFactory.ReportFormat
+            ReportFactory.ReportFormat reportFormat = switch (format) {
+                case JSON -> ReportFactory.ReportFormat.JSON;
+                case HTML -> ReportFactory.ReportFormat.HTML;
+                case MARKDOWN -> ReportFactory.ReportFormat.MARKDOWN;
+            };
+
+            ReportGenerator generator = ReportFactory.getGenerator(reportFormat);
+            String reportContent = generator.generate(result);
+
+            // Determine output file name
+            String fileName = outputFile;
+            if (!fileName.contains(".")) {
+                fileName += "." + generator.getFileExtension();
+            }
+
+            // Write report to file
+            Path outputPath = Path.of(fileName);
+            Files.writeString(outputPath, reportContent);
+
+            ConsoleUI.success("Report saved to: " + outputPath.toAbsolutePath());
+        } catch (IOException e) {
+            ConsoleUI.error("Failed to save report: " + e.getMessage());
+        }
     }
 }

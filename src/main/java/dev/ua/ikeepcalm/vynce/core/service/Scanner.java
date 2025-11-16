@@ -37,6 +37,10 @@ public class Scanner {
         ScanResult result = new ScanResult();
         long startTime = System.currentTimeMillis();
 
+        // Initialize crawler first
+        ConsoleUI.info("Initializing web crawler...");
+        context.initializeCrawler();
+
         ExecutorService executor = Executors.newFixedThreadPool(config.getThreads());
         List<Future<List<Vulnerability>>> futures = new ArrayList<>();
 
