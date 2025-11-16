@@ -74,7 +74,6 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
 
                     if (containsSqlError(body)) {
                         addVulnerability(createVulnerability(
-                                TestType.SQL,
                                 Severity.CRITICAL,
                                 "Error-based SQL Injection detected in parameter '" + paramName + "'. " +
                                         "Database error messages were found in the response, indicating SQL syntax issues.",
@@ -118,7 +117,6 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                         if (Math.abs(trueLength - baselineLength) < 100 &&
                                 Math.abs(falseLength - baselineLength) > 500) {
                             addVulnerability(createVulnerability(
-                                    TestType.SQL,
                                     Severity.CRITICAL,
                                     "Boolean-based blind SQL Injection detected in parameter '" + paramName + "'. " +
                                             "The application responds differently to true and false SQL conditions.",
@@ -152,7 +150,6 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
             // If response took significantly longer (4+ seconds for a 5-second sleep)
             if (duration > 4000) {
                 addVulnerability(createVulnerability(
-                        TestType.SQL,
                         Severity.CRITICAL,
                         "Time-based blind SQL Injection detected in parameter '" + paramName + "'. " +
                                 "The application response was delayed by " + duration + "ms, indicating SQL command execution.",
