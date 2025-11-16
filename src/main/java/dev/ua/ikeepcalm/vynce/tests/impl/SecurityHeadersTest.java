@@ -75,11 +75,12 @@ public class SecurityHeadersTest extends BaseVulnerabilityTest {
 
                 if (headerValue == null || headerValue.trim().isEmpty()) {
                     SecurityHeader header = entry.getValue();
-                    addVulnerability(new Vulnerability(
-                            TestType.HEADERS,
+                    addVulnerability(createVulnerability(
                             header.severity,
+                            "Missing " + headerName + " Header",
                             header.description + " - " + header.purpose,
-                            context.getTargetUrl()
+                            context.getTargetUrl(),
+                            null
                     ));
                 }
             }
@@ -97,21 +98,23 @@ public class SecurityHeadersTest extends BaseVulnerabilityTest {
     private void checkInformationDisclosure(Response response, ScanContext context) {
         String serverHeader = response.header("Server");
         if (serverHeader != null && !serverHeader.isEmpty()) {
-            addVulnerability(new Vulnerability(
-                    TestType.HEADERS,
+            addVulnerability(createVulnerability(
                     Severity.LOW,
+                    "Information Disclosure - Server Header",
                     "Server header exposes version information: " + serverHeader,
-                    context.getTargetUrl()
+                    context.getTargetUrl(),
+                    "Server: " + serverHeader
             ));
         }
 
         String xPoweredBy = response.header("X-Powered-By");
         if (xPoweredBy != null && !xPoweredBy.isEmpty()) {
-            addVulnerability(new Vulnerability(
-                    TestType.HEADERS,
+            addVulnerability(createVulnerability(
                     Severity.LOW,
+                    "Information Disclosure - X-Powered-By Header",
                     "X-Powered-By header exposes technology information: " + xPoweredBy,
-                    context.getTargetUrl()
+                    context.getTargetUrl(),
+                    "X-Powered-By: " + xPoweredBy
             ));
         }
     }
@@ -120,11 +123,12 @@ public class SecurityHeadersTest extends BaseVulnerabilityTest {
         String hsts = response.header("Strict-Transport-Security");
         if (hsts != null) {
             if (!hsts.contains("includeSubDomains")) {
-                addVulnerability(new Vulnerability(
-                        TestType.HEADERS,
+                addVulnerability(createVulnerability(
                         Severity.MEDIUM,
+                        "Weak HSTS Configuration",
                         "HSTS header present but missing 'includeSubDomains' directive",
-                        context.getTargetUrl()
+                        context.getTargetUrl(),
+                        "Strict-Transport-Security: " + hsts
                 ));
             }
 
@@ -136,11 +140,12 @@ public class SecurityHeadersTest extends BaseVulnerabilityTest {
                         String maxAgeStr = parts[1].split("[;,]")[0].trim();
                         long maxAge = Long.parseLong(maxAgeStr);
                         if (maxAge < 15768000) { // 6 months in seconds
-                            addVulnerability(new Vulnerability(
-                                    TestType.HEADERS,
+                            addVulnerability(createVulnerability(
                                     Severity.MEDIUM,
+                                    "Weak HSTS Max-Age",
                                     "HSTS max-age is too short (" + maxAge + " seconds). Recommended: at least 15768000 (6 months)",
-                                    context.getTargetUrl()
+                                    context.getTargetUrl(),
+                                    "Strict-Transport-Security: " + hsts
                             ));
                         }
                     } catch (NumberFormatException ignored) {

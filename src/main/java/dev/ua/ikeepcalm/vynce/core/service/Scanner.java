@@ -25,6 +25,7 @@ public class Scanner {
     private final ScanContext context;
     private volatile boolean stopping = false;
     private ExecutorService executor;
+    private IntermediateResultsSaver resultsSaver;
 
     public Scanner(String targetUrl, List<TestType> testTypes, int threads) {
         this(targetUrl, testTypes, ScanConfig.builder().threads(threads).build());
@@ -59,6 +60,10 @@ public class Scanner {
         ConsoleUI.info("Initializing web crawler...");
         context.initializeCrawler();
 
+        // NFR-4: Start intermediate results saver
+        resultsSaver = new IntermediateResultsSaver(result);
+        resultsSaver.start();
+
         executor = Executors.newFixedThreadPool(config.getThreads());
         List<Future<List<Vulnerability>>> futures = new ArrayList<>();
 
@@ -83,6 +88,10 @@ public class Scanner {
             }
 
         } finally {
+            // NFR-4: Stop intermediate results saver and cleanup temp files
+            if (resultsSaver != null) {
+                resultsSaver.stop();
+            }
             executor.shutdown();
             progress.complete();
             context.close();
@@ -120,6 +129,11 @@ public class Scanner {
                                 vuln.getDescription());
                     }
                 }
+            }
+
+            // NFR-4: Save intermediate results after each test completion
+            if (resultsSaver != null) {
+                resultsSaver.saveAfterTest();
             }
 
             return vulnerabilities;

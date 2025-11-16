@@ -73,7 +73,7 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                     String body = context.getHttpClient().getBodyAsString(response);
 
                     if (containsSqlError(body)) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 TestType.SQL,
                                 Severity.CRITICAL,
                                 "Error-based SQL Injection detected in parameter '" + paramName + "'. " +
@@ -117,7 +117,7 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                         // Check if there's significant difference
                         if (Math.abs(trueLength - baselineLength) < 100 &&
                                 Math.abs(falseLength - baselineLength) > 500) {
-                            addVulnerability(new Vulnerability(
+                            addVulnerability(createVulnerability(
                                     TestType.SQL,
                                     Severity.CRITICAL,
                                     "Boolean-based blind SQL Injection detected in parameter '" + paramName + "'. " +
@@ -151,7 +151,7 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
 
             // If response took significantly longer (4+ seconds for a 5-second sleep)
             if (duration > 4000) {
-                addVulnerability(new Vulnerability(
+                addVulnerability(createVulnerability(
                         TestType.SQL,
                         Severity.CRITICAL,
                         "Time-based blind SQL Injection detected in parameter '" + paramName + "'. " +

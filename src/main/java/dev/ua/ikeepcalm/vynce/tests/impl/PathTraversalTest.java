@@ -62,7 +62,7 @@ public class PathTraversalTest extends BaseVulnerabilityTest {
                     String body = response.body() != null ? response.body().string() : "";
 
                     if (containsPathTraversalIndicators(body)) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 Severity.HIGH,
                                 "Path Traversal",
                                 "Parameter '" + paramName + "' is vulnerable to path traversal",

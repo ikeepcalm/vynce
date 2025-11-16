@@ -3,6 +3,9 @@ package dev.ua.ikeepcalm.vynce.core.model;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Getter
 @Builder
 public class ScanConfig {
@@ -27,4 +30,55 @@ public class ScanConfig {
 
     @Builder.Default
     private int maxRetries = 2;
+
+    // NFR-2: Authentication credentials (sensitive data)
+    private String username;
+    private String password;
+    private String apiKey;
+    private String bearerToken;
+
+    @Builder.Default
+    private Map<String, String> customHeaders = new HashMap<>();
+
+    /**
+     * NFR-2: Override toString to prevent logging sensitive data
+     */
+    @Override
+    public String toString() {
+        return "ScanConfig{" +
+                "timeout=" + timeout +
+                ", followRedirects=" + followRedirects +
+                ", userAgent='" + userAgent + '\'' +
+                ", requestDelay=" + requestDelay +
+                ", threads=" + threads +
+                ", crawlDepth=" + crawlDepth +
+                ", maxRetries=" + maxRetries +
+                ", username='" + (username != null ? "***REDACTED***" : "null") + '\'' +
+                ", password='" + (password != null ? "***REDACTED***" : "null") + '\'' +
+                ", apiKey='" + (apiKey != null ? "***REDACTED***" : "null") + '\'' +
+                ", bearerToken='" + (bearerToken != null ? "***REDACTED***" : "null") + '\'' +
+                ", customHeaders=" + redactHeaders() +
+                '}';
+    }
+
+    /**
+     * NFR-2: Redact sensitive headers (Authorization, API-Key, etc.)
+     */
+    private Map<String, String> redactHeaders() {
+        if (customHeaders == null || customHeaders.isEmpty()) {
+            return customHeaders;
+        }
+
+        Map<String, String> redacted = new HashMap<>();
+        for (Map.Entry<String, String> entry : customHeaders.entrySet()) {
+            String key = entry.getKey().toLowerCase();
+            if (key.contains("auth") || key.contains("token") || key.contains("key") ||
+                key.contains("secret") || key.contains("password")) {
+                redacted.put(entry.getKey(), "***REDACTED***");
+            } else {
+                redacted.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return redacted;
+    }
 }

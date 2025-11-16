@@ -59,7 +59,7 @@ public class SsrfTest extends BaseVulnerabilityTest {
 
                     // Check for indicators of SSRF
                     if (containsSsrfIndicators(body, payload)) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 Severity.HIGH,
                                 "Server-Side Request Forgery (SSRF)",
                                 "Parameter '" + paramName + "' may be vulnerable to SSRF",
@@ -94,7 +94,7 @@ public class SsrfTest extends BaseVulnerabilityTest {
                         String body = response.body() != null ? response.body().string() : "";
 
                         if (containsSsrfIndicators(body, payload)) {
-                            addVulnerability(new Vulnerability(
+                            addVulnerability(createVulnerability(
                                     Severity.HIGH,
                                     "Server-Side Request Forgery (SSRF)",
                                     "Form parameter '" + paramName + "' may be vulnerable to SSRF",

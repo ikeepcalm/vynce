@@ -79,7 +79,7 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
                     String location = response.header("Location");
 
                     if (location != null && (location.contains("evil.com") || location.contains("attacker.com") || location.contains("google.com"))) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 Severity.MEDIUM,
                                 "Open Redirect",
                                 "Parameter '" + paramName + "' is vulnerable to open redirect",
@@ -105,7 +105,7 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
                     String location = response.header("Location");
 
                     if (location != null && (location.contains("evil.com") || location.contains("attacker.com") || location.contains("google.com"))) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 Severity.MEDIUM,
                                 "Open Redirect",
                                 "Parameter '" + paramName + "' is vulnerable to open redirect",

@@ -66,7 +66,7 @@ public class CommandInjectionTest extends BaseVulnerabilityTest {
 
                     // Check for command output indicators
                     if (containsCommandOutputIndicators(body)) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 Severity.CRITICAL,
                                 "Command Injection",
                                 "Parameter '" + paramName + "' is vulnerable to command injection",
@@ -78,7 +78,7 @@ public class CommandInjectionTest extends BaseVulnerabilityTest {
 
                     // Check for time-based injection (sleep commands)
                     if (payload.contains("sleep") && duration > 4500) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 Severity.CRITICAL,
                                 "Command Injection (Time-based)",
                                 "Parameter '" + paramName + "' is vulnerable to command injection (time-based detection)",

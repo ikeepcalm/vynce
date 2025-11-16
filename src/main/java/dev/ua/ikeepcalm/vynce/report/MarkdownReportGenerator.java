@@ -47,6 +47,9 @@ public class MarkdownReportGenerator implements ReportGenerator {
 
                     for (Vulnerability vuln : vulnsOfSeverity) {
                         md.append("#### ").append(vuln.getTitle()).append("\n\n");
+                        if (vuln.getType() != null) {
+                            md.append("**Type:** ").append(vuln.getType().name()).append("\n\n");
+                        }
                         md.append("**Description:** ").append(vuln.getDescription()).append("\n\n");
                         md.append("**URL:** `").append(vuln.getUrl()).append("`\n\n");
 

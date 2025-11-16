@@ -80,6 +80,9 @@ public class HtmlReportGenerator implements ReportGenerator {
                 html.append("            </div>\n");
                 html.append("            <p class=\"vuln-description\">").append(escapeHtml(vuln.getDescription())).append("</p>\n");
                 html.append("            <div class=\"vuln-details\">\n");
+                if (vuln.getType() != null) {
+                    html.append("                <p><strong>Type:</strong> ").append(vuln.getType().name()).append("</p>\n");
+                }
                 html.append("                <p><strong>URL:</strong> <code>").append(escapeHtml(vuln.getUrl())).append("</code></p>\n");
                 if (vuln.getPayload() != null) {
                     html.append("                <p><strong>Payload:</strong> <code>").append(escapeHtml(vuln.getPayload())).append("</code></p>\n");

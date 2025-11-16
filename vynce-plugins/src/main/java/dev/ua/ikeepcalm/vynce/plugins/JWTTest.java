@@ -76,7 +76,7 @@ public class JWTTest extends BaseVulnerabilityTest {
 
             // Check for 'none' algorithm
             if (header.contains("\"alg\"") && header.contains("\"none\"")) {
-                addVulnerability(new Vulnerability(
+                addVulnerability(createVulnerability(
                         Severity.CRITICAL,
                         "JWT with 'none' Algorithm",
                         "JWT token uses 'none' algorithm, allowing signature bypass",
@@ -87,7 +87,7 @@ public class JWTTest extends BaseVulnerabilityTest {
 
             // Check for weak algorithms
             if (header.contains("\"HS256\"") || header.contains("\"HS384\"") || header.contains("\"HS512\"")) {
-                addVulnerability(new Vulnerability(
+                addVulnerability(createVulnerability(
                         Severity.LOW,
                         "JWT with Weak HMAC Algorithm",
                         "JWT uses HMAC algorithm which may be vulnerable to key confusion attacks",
@@ -101,7 +101,7 @@ public class JWTTest extends BaseVulnerabilityTest {
 
             // Check for missing expiration
             if (!payload.contains("\"exp\"")) {
-                addVulnerability(new Vulnerability(
+                addVulnerability(createVulnerability(
                         Severity.MEDIUM,
                         "JWT Missing Expiration",
                         "JWT token does not have an expiration claim, potentially valid forever",
@@ -123,7 +123,7 @@ public class JWTTest extends BaseVulnerabilityTest {
 
         while (matcher.find()) {
             String jwt = matcher.group();
-            addVulnerability(new Vulnerability(
+            addVulnerability(createVulnerability(
                     Severity.INFO,
                     "JWT Token Exposed in Response",
                     "JWT token found in response body, potential information disclosure",

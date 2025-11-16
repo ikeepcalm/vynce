@@ -63,7 +63,7 @@ public class XxeTest extends BaseVulnerabilityTest {
                     String body = response.body() != null ? response.body().string() : "";
 
                     if (containsXxeIndicators(body)) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 Severity.HIGH,
                                 "XML External Entity (XXE) Injection",
                                 "Form at '" + form.getAction() + "' is vulnerable to XXE",
@@ -99,7 +99,7 @@ public class XxeTest extends BaseVulnerabilityTest {
                         String body = response.body() != null ? response.body().string() : "";
 
                         if (containsXxeIndicators(body)) {
-                            addVulnerability(new Vulnerability(
+                            addVulnerability(createVulnerability(
                                     Severity.HIGH,
                                     "XML External Entity (XXE) Injection",
                                     "Endpoint '" + endpoint + "' is vulnerable to XXE",

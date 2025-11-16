@@ -67,7 +67,7 @@ public class GraphQLTest extends BaseVulnerabilityTest {
 
                     // Check if introspection is enabled
                     if (body.contains("__schema") || body.contains("__type") || body.contains("queryType")) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 Severity.MEDIUM,
                                 "GraphQL Introspection Enabled",
                                 "GraphQL introspection is enabled, exposing schema information",
@@ -108,7 +108,7 @@ public class GraphQLTest extends BaseVulnerabilityTest {
 
                 // Check if batching is allowed (response contains multiple results)
                 if (body.contains("\"data\"") && body.split("\"data\"").length > 2) {
-                    addVulnerability(new Vulnerability(
+                    addVulnerability(createVulnerability(
                             Severity.LOW,
                             "GraphQL Query Batching Allowed",
                             "GraphQL endpoint allows query batching, which could be abused for DoS attacks",

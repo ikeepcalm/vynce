@@ -62,7 +62,7 @@ public class LdapInjectionTest extends BaseVulnerabilityTest {
 
                     // Check for LDAP error messages
                     if (containsLdapErrorIndicators(body)) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 Severity.HIGH,
                                 "LDAP Injection",
                                 "Parameter '" + paramName + "' may be vulnerable to LDAP injection",
@@ -74,7 +74,7 @@ public class LdapInjectionTest extends BaseVulnerabilityTest {
 
                     // Check for different response with wildcard
                     if (payload.equals("*") && body.length() > 1000) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 Severity.MEDIUM,
                                 "Possible LDAP Injection",
                                 "Parameter '" + paramName + "' shows different response with LDAP wildcard",

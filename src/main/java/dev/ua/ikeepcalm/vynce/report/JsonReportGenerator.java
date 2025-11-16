@@ -66,6 +66,7 @@ public class JsonReportGenerator implements ReportGenerator {
 
     private Map<String, String> vulnerabilityToMap(Vulnerability vuln) {
         Map<String, String> map = new HashMap<>();
+        map.put("type", vuln.getType() != null ? vuln.getType().name() : "UNKNOWN");
         map.put("severity", vuln.getSeverity().name());
         map.put("title", vuln.getTitle());
         map.put("description", vuln.getDescription());

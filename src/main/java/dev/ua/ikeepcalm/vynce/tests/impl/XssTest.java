@@ -59,7 +59,7 @@ public class XssTest extends BaseVulnerabilityTest {
             // Test basic payloads
             for (String payload : basicPayloads) {
                 if (testPayload(context, url, paramName, payload)) {
-                    addVulnerability(new Vulnerability(
+                    addVulnerability(createVulnerability(
                             TestType.XSS,
                             Severity.HIGH,
                             "Reflected XSS detected in parameter '" + paramName + "'. " +
@@ -74,7 +74,7 @@ public class XssTest extends BaseVulnerabilityTest {
             // Test attribute-based payloads
             for (String payload : attributePayloads) {
                 if (testPayload(context, url, paramName, payload)) {
-                    addVulnerability(new Vulnerability(
+                    addVulnerability(createVulnerability(
                             TestType.XSS,
                             Severity.HIGH,
                             "Attribute-based XSS detected in parameter '" + paramName + "'. " +
@@ -89,7 +89,7 @@ public class XssTest extends BaseVulnerabilityTest {
             // Test JavaScript context payloads
             for (String payload : jsPayloads) {
                 if (testJsPayload(context, url, paramName, payload)) {
-                    addVulnerability(new Vulnerability(
+                    addVulnerability(createVulnerability(
                             TestType.XSS,
                             Severity.HIGH,
                             "JavaScript context XSS detected in parameter '" + paramName + "'. " +
@@ -193,7 +193,7 @@ public class XssTest extends BaseVulnerabilityTest {
     private void checkForDangerousPatterns(String body, String url) {
         // Check for eval() usage
         if (body.matches("(?i).*eval\\s*\\(.*\\).*")) {
-            addVulnerability(new Vulnerability(
+            addVulnerability(createVulnerability(
                     TestType.XSS,
                     Severity.MEDIUM,
                     "Use of eval() detected in JavaScript code, which can lead to code injection vulnerabilities.",
@@ -203,7 +203,7 @@ public class XssTest extends BaseVulnerabilityTest {
 
         // Check for innerHTML usage with user input
         if (body.matches("(?i).*innerHTML\\s*=.*")) {
-            addVulnerability(new Vulnerability(
+            addVulnerability(createVulnerability(
                     TestType.XSS,
                     Severity.LOW,
                     "Use of innerHTML detected. If user input is assigned to innerHTML without sanitization, XSS is possible.",
@@ -213,7 +213,7 @@ public class XssTest extends BaseVulnerabilityTest {
 
         // Check for document.write() usage
         if (body.matches("(?i).*document\\.write\\s*\\(.*\\).*")) {
-            addVulnerability(new Vulnerability(
+            addVulnerability(createVulnerability(
                     TestType.XSS,
                     Severity.LOW,
                     "Use of document.write() detected, which can be exploited for XSS if user input is involved.",

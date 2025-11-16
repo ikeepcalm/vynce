@@ -42,7 +42,7 @@ public class CorsTest extends BaseVulnerabilityTest {
                 if (acao != null) {
                     // Check for wildcard with credentials
                     if ("*".equals(acao) && "true".equalsIgnoreCase(acac)) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 Severity.HIGH,
                                 "CORS Misconfiguration - Wildcard with Credentials",
                                 "Access-Control-Allow-Origin is set to * with credentials enabled",
@@ -54,7 +54,7 @@ public class CorsTest extends BaseVulnerabilityTest {
                     // Check if arbitrary origin is reflected
                     if (acao.equals(testOrigin)) {
                         Severity severity = "true".equalsIgnoreCase(acac) ? Severity.HIGH : Severity.MEDIUM;
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 severity,
                                 "CORS Misconfiguration - Arbitrary Origin Reflected",
                                 "Access-Control-Allow-Origin reflects arbitrary origin: " + testOrigin,
@@ -65,7 +65,7 @@ public class CorsTest extends BaseVulnerabilityTest {
 
                     // Check for null origin
                     if ("null".equals(acao) && testOrigin.equals("null")) {
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 Severity.MEDIUM,
                                 "CORS Misconfiguration - Null Origin Allowed",
                                 "Access-Control-Allow-Origin allows 'null' origin",
@@ -94,7 +94,7 @@ public class CorsTest extends BaseVulnerabilityTest {
                 String acao = response.header("Access-Control-Allow-Origin");
 
                 if (acao == null && response.isSuccessful()) {
-                    addVulnerability(new Vulnerability(
+                    addVulnerability(createVulnerability(
                             Severity.INFO,
                             "Missing CORS Headers",
                             "API endpoint '" + path + "' does not set CORS headers",

@@ -35,7 +35,7 @@ public class CsrfTest extends BaseVulnerabilityTest {
                 if (method.equals("POST") || method.equals("PUT") || method.equals("DELETE") || method.isEmpty()) {
                     if (!hasCsrfToken(form)) {
                         String action = form.attr("action");
-                        addVulnerability(new Vulnerability(
+                        addVulnerability(createVulnerability(
                                 TestType.CSRF,
                                 Severity.MEDIUM,
                                 "Form without CSRF protection detected. Action: " + (action.isEmpty() ? "(current page)" : action),
