@@ -5,8 +5,8 @@ import dev.ua.ikeepcalm.vynce.tests.impl.*;
 import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 
 public class TestFactory {
 
@@ -31,30 +31,24 @@ public class TestFactory {
     }
 
     /**
-     * Load plugins using ServiceLoader mechanism.
-     * This allows third-party tests to be discovered at runtime.
+     * Load plugins from the plugins/ directory.
+     * This scans for JAR files in a plugins/ folder next to the main JAR.
      */
     private static synchronized void loadPlugins() {
         if (pluginsLoaded) {
             return;
         }
 
-        ConsoleUI.debug("Loading vulnerability test plugins...");
+        ConsoleUI.debug("Loading vulnerability test plugins from plugins/ directory...");
 
-        ServiceLoader<VulnerabilityTest> loader = ServiceLoader.load(VulnerabilityTest.class);
-        int pluginCount = 0;
+        // Load plugins using the PluginLoader
+        List<VulnerabilityTest> plugins = PluginLoader.loadPlugins();
 
-        for (VulnerabilityTest test : loader) {
+        // Register each plugin by its test type
+        for (VulnerabilityTest test : plugins) {
             TestType testType = test.getTestType();
             pluginRegistry.put(testType, test);
-            pluginCount++;
-            ConsoleUI.debug("Loaded plugin: " + test.getClass().getName() + " for test type: " + testType);
-        }
-
-        if (pluginCount > 0) {
-            ConsoleUI.info("Loaded " + pluginCount + " plugin test(s)");
-        } else {
-            ConsoleUI.debug("No plugins found, using built-in tests only");
+            ConsoleUI.debug("Registered plugin: " + test.getClass().getName() + " for test type: " + testType);
         }
 
         pluginsLoaded = true;
@@ -96,5 +90,6 @@ public class TestFactory {
     public static synchronized void reset() {
         pluginRegistry.clear();
         pluginsLoaded = false;
+        PluginLoader.reset();
     }
 }

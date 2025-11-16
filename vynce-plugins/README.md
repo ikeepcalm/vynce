@@ -1,14 +1,32 @@
 # Vynce Custom Test Plugins
 
-This module demonstrates how to create custom vulnerability tests for Vynce Scanner using the ServiceLoader mechanism.
+This module demonstrates how to create custom vulnerability tests for Vynce Scanner using a simple plugin system.
 
 ## Overview
 
-Vynce Scanner supports custom vulnerability tests through Java's ServiceLoader mechanism. This allows you to:
+Vynce Scanner supports custom vulnerability tests through a dynamic JAR loading system. This allows you to:
 
 - Create custom security tests tailored to your needs
 - Override built-in tests with your own implementations
 - Extend the scanner without modifying the core codebase
+- Simply drop JAR files into a `plugins/` folder
+
+## How Plugin Loading Works
+
+Vynce automatically scans a `plugins/` directory for JAR files when it starts:
+
+```
+vynce.jar
+plugins/
+  ├── test1.jar
+  └── test2.jar
+```
+
+When you run Vynce, it will:
+1. Look for a `plugins/` folder next to the JAR
+2. Load all JAR files from that folder
+3. Scan each JAR for classes implementing `VulnerabilityTest`
+4. Make those tests available for scanning
 
 ## Creating a Custom Test
 
@@ -30,7 +48,7 @@ public class CustomApiTest extends BaseVulnerabilityTest {
     @Override
     public TestType getTestType() {
         // Return the test type this plugin implements
-        return TestType.CUSTOM;
+        return TestType.SSRF;  // You can override built-in tests
     }
 
     @Override
@@ -47,30 +65,40 @@ public class CustomApiTest extends BaseVulnerabilityTest {
 }
 ```
 
-### 2. Register the Plugin
-
-Create a file at `src/main/resources/META-INF/services/dev.ua.ikeepcalm.vynce.tests.VulnerabilityTest` containing:
-
-```
-dev.ua.ikeepcalm.vynce.plugins.custom.CustomApiTest
-```
-
-### 3. Build and Deploy
+### 2. Build the Plugin
 
 ```bash
 # Build the plugin JAR
 ./gradlew :vynce-plugins:build
 
-# Copy to Vynce's classpath
-cp vynce-plugins/build/libs/vynce-plugins-1.0.0.jar /path/to/vynce/plugins/
+# This creates: vynce-plugins/build/libs/vynce-plugins-1.0.0.jar
+```
+
+### 3. Deploy the Plugin
+
+Simply copy the JAR to the `plugins/` folder:
+
+```bash
+# Create plugins folder next to vynce.jar
+mkdir plugins
+
+# Copy your plugin
+cp vynce-plugins/build/libs/vynce-plugins-1.0.0.jar plugins/
 ```
 
 ### 4. Run Vynce
 
-The plugin will be automatically discovered and loaded:
+Just run Vynce normally - plugins are loaded automatically:
 
 ```bash
-java -cp "vynce-1.0.0-all.jar:plugins/*" dev.ua.ikeepcalm.vynce.VynceApplication scan https://target.com
+java -jar vynce-1.0.0-all.jar scan https://target.com
+```
+
+**Output:**
+```
+Loading plugins from: /path/to/plugins
+Loaded 2 test(s) from vynce-plugins-1.0.0.jar
+Total plugins loaded: 2 test(s) from 1 JAR(s)
 ```
 
 ## Example Plugins Included
