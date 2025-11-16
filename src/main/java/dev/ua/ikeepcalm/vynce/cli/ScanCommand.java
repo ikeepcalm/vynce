@@ -6,6 +6,7 @@ import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.report.ReportFactory;
 import dev.ua.ikeepcalm.vynce.report.ReportGenerator;
+import dev.ua.ikeepcalm.vynce.report.ReportManager;
 import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 import dev.ua.ikeepcalm.vynce.ui.ScanProgress;
 import picocli.CommandLine;
@@ -245,6 +246,16 @@ public class ScanCommand implements Callable<Integer> {
 
     private void saveResults(ScanResult result) {
         try {
+            // Save to managed reports directory
+            ReportManager manager = new ReportManager();
+            String reportId = manager.saveReport(result, targetUrl);
+
+            if (reportId != null) {
+                ConsoleUI.success("Report saved with ID: " + reportId);
+                ConsoleUI.info("View it with: vynce report view " + reportId);
+            }
+
+            // Also save to user-specified file if provided
             ConsoleUI.info("Generating " + format.name() + " report...");
 
             // Map OutputFormat to ReportFactory.ReportFormat
@@ -267,7 +278,7 @@ public class ScanCommand implements Callable<Integer> {
             Path outputPath = Path.of(fileName);
             Files.writeString(outputPath, reportContent);
 
-            ConsoleUI.success("Report saved to: " + outputPath.toAbsolutePath());
+            ConsoleUI.success("Report also saved to: " + outputPath.toAbsolutePath());
         } catch (IOException e) {
             ConsoleUI.error("Failed to save report: " + e.getMessage());
         }
