@@ -1,6 +1,8 @@
 package dev.ua.ikeepcalm.vynce.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dev.ua.ikeepcalm.vynce.core.model.ScanResult;
 import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 
@@ -30,6 +32,8 @@ public class ReportManager {
 
     public ReportManager() {
         this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new JavaTimeModule());
+        this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         this.reportsDirectory = initializeReportsDirectory();
     }
 

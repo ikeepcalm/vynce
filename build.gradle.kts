@@ -7,6 +7,11 @@ plugins {
 group = "dev.ua.ikeepcalm.vynce"
 version = "1.0.0"
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
 repositories {
     mavenCentral()
 }
@@ -16,6 +21,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jsoup:jsoup:1.17.2")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.1")
     implementation("org.fusesource.jansi:jansi:2.4.1")
     implementation("me.tongfei:progressbar:0.10.0")
     implementation("org.slf4j:slf4j-api:2.0.9")

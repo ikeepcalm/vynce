@@ -21,6 +21,19 @@ public class ReportFactory {
         return generator;
     }
 
+    /**
+     * Get a report generator by format name (string)
+     */
+    public static ReportGenerator getGenerator(String formatName) {
+        ReportFormat format = switch (formatName.toLowerCase()) {
+            case "json" -> ReportFormat.JSON;
+            case "html" -> ReportFormat.HTML;
+            case "markdown", "md" -> ReportFormat.MARKDOWN;
+            default -> throw new IllegalArgumentException("Unsupported report format: " + formatName);
+        };
+        return getGenerator(format);
+    }
+
     public enum ReportFormat {
         JSON, HTML, MARKDOWN
     }
