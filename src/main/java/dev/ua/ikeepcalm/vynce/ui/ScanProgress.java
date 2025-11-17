@@ -20,7 +20,7 @@ public class ScanProgress {
                 .setTaskName("Scanning")
                 .setInitialMax(totalTests)
                 .setStyle(ProgressBarStyle.ASCII)
-                .setUpdateIntervalMillis(100)
+                .setUpdateIntervalMillis(20)
                 .showSpeed()
                 .build();
     }
@@ -42,8 +42,7 @@ public class ScanProgress {
 
     private void updateMessage() {
         int percentage = (int) ((completed * 100.0) / totalTests);
-        String message = String.format("%s | %d%% | Found: %d",
-            currentTestName, percentage, vulnerabilitiesFound);
+        String message = String.format(" %s | %d%% | Found: %d", currentTestName, percentage, vulnerabilitiesFound);
         progressBar.setExtraMessage(message);
     }
 

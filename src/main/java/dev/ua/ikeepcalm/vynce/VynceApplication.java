@@ -18,10 +18,6 @@ public class VynceApplication {
             }
         }
 
-//        if (args.length == 0) {
-//            ConsoleUI.showBanner();
-//        }
-
         MainCommand mainCommand = new MainCommand();
         CommandLine commandLine = new CommandLine(mainCommand);
         commandLine.setExecutionExceptionHandler(new ExceptionHandler());

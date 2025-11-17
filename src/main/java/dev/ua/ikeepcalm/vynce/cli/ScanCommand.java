@@ -147,9 +147,16 @@ public class ScanCommand implements Callable<Integer> {
         ScanProgress progress = new ScanProgress(testTypes.size());
         Scanner scanner = new Scanner(targetUrl, testTypes, config);
 
-        setupShutdownHook(scanner, progress);
+        Thread shutdownHook = setupShutdownHook(scanner, progress);
 
         ScanResult result = scanner.scanWithProgress(progress);
+
+        // Remove shutdown hook after successful completion
+        try {
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+        } catch (IllegalStateException ignored) {
+            // Hook already running or JVM shutting down
+        }
 
         displayResults(result);
 
@@ -191,13 +198,15 @@ public class ScanCommand implements Callable<Integer> {
         System.out.println();
     }
 
-    private void setupShutdownHook(Scanner scanner, ScanProgress progress) {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            ConsoleUI.warning("\nScan interrupted by user. Cleaning up...");
+    private Thread setupShutdownHook(Scanner scanner, ScanProgress progress) {
+        Thread shutdownHook = new Thread(() -> {
             scanner.stop();
             progress.complete();
+            ConsoleUI.warning("Scan interrupted by user. Cleaning up...");
             ConsoleUI.info("Scan stopped. Partial results may be available.");
-        }));
+        });
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+        return shutdownHook;
     }
 
     private boolean checkConnectivity() {
@@ -246,6 +255,7 @@ public class ScanCommand implements Callable<Integer> {
             System.out.println("  High:     " + result.getHighCount());
             System.out.println("  Medium:   " + result.getMediumCount());
             System.out.println("  Low:      " + result.getLowCount());
+            System.out.println();
         }
     }
 
@@ -259,6 +269,27 @@ public class ScanCommand implements Callable<Integer> {
 
             if (reportId != null) {
                 ConsoleUI.success("Report saved with ID: " + reportId);
+
+                // If format is not JSON, also save the formatted version
+                if (format != OutputFormat.JSON) {
+                    String formatName = format.name();
+                    ReportFactory.ReportFormat reportFormat = switch (format) {
+                        case HTML -> ReportFactory.ReportFormat.HTML;
+                        case MARKDOWN -> ReportFactory.ReportFormat.MARKDOWN;
+                        default -> ReportFactory.ReportFormat.JSON;
+                    };
+
+                    ReportGenerator generator = ReportFactory.getGenerator(reportFormat);
+                    String reportContent = generator.generate(result);
+
+                    // Save formatted version alongside JSON
+                    Path formattedReport = manager.getReportsDirectory()
+                        .resolve(reportId + "." + generator.getFileExtension());
+                    Files.writeString(formattedReport, reportContent);
+
+                    ConsoleUI.info("Also saved as " + formatName + " format");
+                }
+
                 ConsoleUI.info("View it with: vynce report view " + reportId);
             }
         } catch (Exception e) {

@@ -1,5 +1,7 @@
 package dev.ua.ikeepcalm.vynce.core.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import lombok.Getter;
 import lombok.Setter;
@@ -7,6 +9,7 @@ import lombok.Setter;
 import java.util.List;
 
 @Getter
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ScanResult {
 
     @Setter
@@ -25,6 +28,7 @@ public class ScanResult {
         this.vulnerabilities.addAll(vulnerabilities);
     }
 
+    @JsonIgnore
     public int getCriticalCount() {
         int criticalCount = 0;
         for (Vulnerability vulnerability : vulnerabilities) {
@@ -36,6 +40,7 @@ public class ScanResult {
         return criticalCount;
     }
 
+    @JsonIgnore
     public int getHighCount() {
         int highCount = 0;
         for (Vulnerability vulnerability : vulnerabilities) {
@@ -47,6 +52,7 @@ public class ScanResult {
         return highCount;
     }
 
+    @JsonIgnore
     public int getMediumCount() {
         int mediumCount = 0;
         for (Vulnerability vulnerability : vulnerabilities) {
@@ -58,6 +64,7 @@ public class ScanResult {
         return mediumCount;
     }
 
+    @JsonIgnore
     public int getLowCount() {
         int lowCount = 0;
         for (Vulnerability vulnerability : vulnerabilities) {

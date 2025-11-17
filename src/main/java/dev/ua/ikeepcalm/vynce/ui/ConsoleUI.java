@@ -27,7 +27,7 @@ public class ConsoleUI {
                 """).reset());
 
         System.out.println(ansi().fg(YELLOW).a("  Web Vulnerability Scanner v1.0.0").reset());
-        System.out.println(ansi().fg(WHITE).a("  Type 'vulnscan --help' for usage\n").reset());
+        System.out.println(ansi().fg(WHITE).a("  Type 'vynce --help' for usage\n").reset());
     }
 
     public static void info(String message) {
