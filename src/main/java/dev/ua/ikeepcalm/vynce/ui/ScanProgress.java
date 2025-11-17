@@ -10,6 +10,7 @@ public class ScanProgress {
     private int totalTests;
     private int completed;
     private volatile int vulnerabilitiesFound = 0;
+    private String currentTestName = "";
 
     public ScanProgress(int totalTests) {
         this.totalTests = totalTests;
@@ -25,8 +26,9 @@ public class ScanProgress {
     }
 
     public void update(String testName) {
+        this.currentTestName = testName;
         progressBar.step();
-        updateMessage(testName);
+        updateMessage();
         completed++;
     }
 
@@ -35,13 +37,13 @@ public class ScanProgress {
      */
     public void updateVulnerabilityCount(int count) {
         this.vulnerabilitiesFound = count;
-        updateMessage(progressBar.getExtraMessage());
+        updateMessage();
     }
 
-    private void updateMessage(String testName) {
+    private void updateMessage() {
         int percentage = (int) ((completed * 100.0) / totalTests);
         String message = String.format("%s | %d%% | Found: %d",
-            testName, percentage, vulnerabilitiesFound);
+            currentTestName, percentage, vulnerabilitiesFound);
         progressBar.setExtraMessage(message);
     }
 

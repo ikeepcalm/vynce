@@ -1,5 +1,6 @@
 package dev.ua.ikeepcalm.vynce.cli;
 
+import dev.ua.ikeepcalm.vynce.core.model.ScanConfig;
 import dev.ua.ikeepcalm.vynce.core.model.ScanResult;
 import dev.ua.ikeepcalm.vynce.core.service.Scanner;
 import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
@@ -153,8 +154,12 @@ public class ScanCommand implements Callable<Integer> {
 
         displayResults(result);
 
+        // Always save to managed reports directory
+        saveToReportsDirectory(result);
+
+        // Additionally export to custom file if specified
         if (outputFile != null) {
-            saveResults(result);
+            exportToCustomFile(result);
         }
 
         return 0;
@@ -244,9 +249,11 @@ public class ScanCommand implements Callable<Integer> {
         }
     }
 
-    private void saveResults(ScanResult result) {
+    /**
+     * Save scan results to the managed reports directory (~/.vynce/reports)
+     */
+    private void saveToReportsDirectory(ScanResult result) {
         try {
-            // Save to managed reports directory
             ReportManager manager = new ReportManager();
             String reportId = manager.saveReport(result, targetUrl);
 
@@ -254,9 +261,17 @@ public class ScanCommand implements Callable<Integer> {
                 ConsoleUI.success("Report saved with ID: " + reportId);
                 ConsoleUI.info("View it with: vynce report view " + reportId);
             }
+        } catch (Exception e) {
+            ConsoleUI.error("Failed to save report to managed directory: " + e.getMessage());
+        }
+    }
 
-            // Also save to user-specified file if provided
-            ConsoleUI.info("Generating " + format.name() + " report...");
+    /**
+     * Export scan results to a custom file in the specified format
+     */
+    private void exportToCustomFile(ScanResult result) {
+        try {
+            ConsoleUI.info("Exporting " + format.name() + " report to custom file...");
 
             // Map OutputFormat to ReportFactory.ReportFormat
             ReportFactory.ReportFormat reportFormat = switch (format) {
@@ -278,9 +293,9 @@ public class ScanCommand implements Callable<Integer> {
             Path outputPath = Path.of(fileName);
             Files.writeString(outputPath, reportContent);
 
-            ConsoleUI.success("Report also saved to: " + outputPath.toAbsolutePath());
+            ConsoleUI.success("Report exported to: " + outputPath.toAbsolutePath());
         } catch (IOException e) {
-            ConsoleUI.error("Failed to save report: " + e.getMessage());
+            ConsoleUI.error("Failed to export report: " + e.getMessage());
         }
     }
 }

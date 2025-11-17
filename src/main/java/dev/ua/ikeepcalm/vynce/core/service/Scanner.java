@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ExecutorCompletionService;
 
 public class Scanner {
 
@@ -65,19 +66,32 @@ public class Scanner {
         resultsSaver.start();
 
         executor = Executors.newFixedThreadPool(config.getThreads());
-        List<Future<List<Vulnerability>>> futures = new ArrayList<>();
+        ExecutorCompletionService<TestResult> completionService =
+            new ExecutorCompletionService<>(executor);
 
         try {
+            // Submit all tests
             for (TestType testType : testTypes) {
                 if (stopping) break;
-                futures.add(executor.submit(() -> runTest(testType, progress, result)));
+                completionService.submit(() -> {
+                    List<Vulnerability> vulns = runTest(testType, progress, result);
+                    return new TestResult(testType, vulns);
+                });
             }
 
-            for (Future<List<Vulnerability>> future : futures) {
+            // Process results as they complete
+            int tasksSubmitted = testTypes.size();
+            for (int i = 0; i < tasksSubmitted; i++) {
                 if (stopping) break;
                 try {
-                    List<Vulnerability> vulns = future.get();
-                    result.addVulnerabilities(vulns);
+                    Future<TestResult> future = completionService.take(); // Blocks until next result
+                    TestResult testResult = future.get();
+
+                    // Update progress when test completes
+                    progress.update(testResult.testType.getDisplayName());
+
+                    // Add vulnerabilities to result
+                    result.addVulnerabilities(testResult.vulnerabilities);
                     progress.updateVulnerabilityCount(result.getVulnerabilities().size());
                 } catch (Exception e) {
                     if (!stopping) {
@@ -108,15 +122,15 @@ public class Scanner {
             return new ArrayList<>();
         }
 
-        progress.update(testType.getDisplayName());
-
         try {
             VulnerabilityTest testInstance = TestFactory.createTest(testType);
             ConsoleUI.debug("Executing test: " + testType.getDisplayName());
 
             List<Vulnerability> vulnerabilities = testInstance.execute(context);
 
-            if (!vulnerabilities.isEmpty()) {
+            // Only print vulnerabilities during scan if in verbose mode
+            // Otherwise, they'll be displayed in the final results section
+            if (!vulnerabilities.isEmpty() && ConsoleUI.isVerbose()) {
                 for (Vulnerability vuln : vulnerabilities) {
                     // FR-10: Immediate notification of critical vulnerabilities
                     if (vuln.getSeverity() == Severity.CRITICAL) {
@@ -144,6 +158,19 @@ public class Scanner {
                 ConsoleUI.debug("Stack trace: %s", e);
             }
             return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Helper class to hold test results
+     */
+    private static class TestResult {
+        final TestType testType;
+        final List<Vulnerability> vulnerabilities;
+
+        TestResult(TestType testType, List<Vulnerability> vulnerabilities) {
+            this.testType = testType;
+            this.vulnerabilities = vulnerabilities;
         }
     }
 }

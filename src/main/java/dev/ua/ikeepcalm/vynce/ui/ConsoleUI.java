@@ -57,6 +57,7 @@ public class ConsoleUI {
             case HIGH -> MAGENTA;
             case MEDIUM -> YELLOW;
             case LOW -> CYAN;
+            default -> GREEN;
         };
 
         System.out.println(ansi()
@@ -82,13 +83,13 @@ public class ConsoleUI {
 
     public static void debug(String message) {
         if (verbose) {
-            System.out.println(ansi().fg(Color.WHITE).a("[DEBUG] ").reset().a(message));
+            System.out.println(ansi().fg(WHITE).a("[DEBUG] ").reset().a(message));
         }
     }
 
     public static void debug(String format, Object... args) {
         if (verbose) {
-            System.out.println(ansi().fg(Color.WHITE).a("[DEBUG] ").reset().a(String.format(format, args)));
+            System.out.println(ansi().fg(WHITE).a("[DEBUG] ").reset().a(String.format(format, args)));
         }
     }
 

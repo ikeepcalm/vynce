@@ -38,8 +38,7 @@ public class WebCrawler {
     public void crawl() {
         ConsoleUI.info("Starting web crawl from: " + baseUrl);
         crawlRecursive(baseUrl, 0);
-        ConsoleUI.success("Crawl complete. Found %d URLs and %d forms",
-                discoveredUrls.size(), discoveredForms.size());
+        ConsoleUI.success("Crawl complete. Found " + discoveredUrls.size() + " URLs and " + discoveredForms.size() + " forms");
     }
 
     private void crawlRecursive(String url, int depth) {

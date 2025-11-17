@@ -13,6 +13,7 @@ CLAUDE.md
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
+.idea/discord.xml
 *.iws
 *.iml
 *.ipr
