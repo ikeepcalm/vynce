@@ -1,7 +1,6 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
-import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
@@ -34,44 +33,44 @@ public class CorsTest extends BaseVulnerabilityTest {
                 Map<String, String> headers = new HashMap<>();
                 headers.put("Origin", testOrigin);
 
-                Response response = context.getHttpClient().get(context.getTargetUrl(), headers);
+                try (Response response = context.getHttpClient().get(context.getTargetUrl(), headers)) {
+                    String acao = response.header("Access-Control-Allow-Origin");
+                    String acac = response.header("Access-Control-Allow-Credentials");
 
-                String acao = response.header("Access-Control-Allow-Origin");
-                String acac = response.header("Access-Control-Allow-Credentials");
+                    if (acao != null) {
+                        // Check for wildcard with credentials
+                        if ("*".equals(acao) && "true".equalsIgnoreCase(acac)) {
+                            addVulnerability(createVulnerability(
+                                    Severity.HIGH,
+                                    "CORS Misconfiguration - Wildcard with Credentials",
+                                    "Access-Control-Allow-Origin is set to * with credentials enabled",
+                                    context.getTargetUrl(),
+                                    "Origin: " + testOrigin
+                            ));
+                        }
 
-                if (acao != null) {
-                    // Check for wildcard with credentials
-                    if ("*".equals(acao) && "true".equalsIgnoreCase(acac)) {
-                        addVulnerability(createVulnerability(
-                                Severity.HIGH,
-                                "CORS Misconfiguration - Wildcard with Credentials",
-                                "Access-Control-Allow-Origin is set to * with credentials enabled",
-                                context.getTargetUrl(),
-                                "Origin: " + testOrigin
-                        ));
-                    }
+                        // Check if arbitrary origin is reflected
+                        if (acao.equals(testOrigin)) {
+                            Severity severity = "true".equalsIgnoreCase(acac) ? Severity.HIGH : Severity.MEDIUM;
+                            addVulnerability(createVulnerability(
+                                    severity,
+                                    "CORS Misconfiguration - Arbitrary Origin Reflected",
+                                    "Access-Control-Allow-Origin reflects arbitrary origin: " + testOrigin,
+                                    context.getTargetUrl(),
+                                    "Origin: " + testOrigin
+                            ));
+                        }
 
-                    // Check if arbitrary origin is reflected
-                    if (acao.equals(testOrigin)) {
-                        Severity severity = "true".equalsIgnoreCase(acac) ? Severity.HIGH : Severity.MEDIUM;
-                        addVulnerability(createVulnerability(
-                                severity,
-                                "CORS Misconfiguration - Arbitrary Origin Reflected",
-                                "Access-Control-Allow-Origin reflects arbitrary origin: " + testOrigin,
-                                context.getTargetUrl(),
-                                "Origin: " + testOrigin
-                        ));
-                    }
-
-                    // Check for null origin
-                    if ("null".equals(acao) && testOrigin.equals("null")) {
-                        addVulnerability(createVulnerability(
-                                Severity.MEDIUM,
-                                "CORS Misconfiguration - Null Origin Allowed",
-                                "Access-Control-Allow-Origin allows 'null' origin",
-                                context.getTargetUrl(),
-                                "Origin: null"
-                        ));
+                        // Check for null origin
+                        if ("null".equals(acao) && testOrigin.equals("null")) {
+                            addVulnerability(createVulnerability(
+                                    Severity.MEDIUM,
+                                    "CORS Misconfiguration - Null Origin Allowed",
+                                    "Access-Control-Allow-Origin allows 'null' origin",
+                                    context.getTargetUrl(),
+                                    "Origin: null"
+                            ));
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -87,10 +86,9 @@ public class CorsTest extends BaseVulnerabilityTest {
         String[] apiPaths = {"/api", "/api/v1", "/graphql", "/rest"};
 
         for (String path : apiPaths) {
-            try {
-                String testUrl = context.getTargetUrl() + path;
-                Response response = context.getHttpClient().get(testUrl, Map.of());
+            String testUrl = context.getTargetUrl() + path;
 
+            try (Response response = context.getHttpClient().get(testUrl, Map.of())) {
                 String acao = response.header("Access-Control-Allow-Origin");
 
                 if (acao == null && response.isSuccessful()) {

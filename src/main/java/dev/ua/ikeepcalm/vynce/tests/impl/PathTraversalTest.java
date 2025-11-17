@@ -56,20 +56,20 @@ public class PathTraversalTest extends BaseVulnerabilityTest {
         for (String payload : PATH_TRAVERSAL_PAYLOADS) {
             try {
                 String testUrl = injectPayload(url, paramName, payload);
-                Response response = context.getHttpClient().get(testUrl, Collections.emptyMap());
+                try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {
+                    if (response.isSuccessful()) {
+                        String body = response.body() != null ? response.body().string() : "";
 
-                if (response.isSuccessful()) {
-                    String body = response.body() != null ? response.body().string() : "";
-
-                    if (containsPathTraversalIndicators(body)) {
-                        addVulnerability(createVulnerability(
-                                Severity.HIGH,
-                                "Path Traversal",
-                                "Parameter '" + paramName + "' is vulnerable to path traversal",
-                                url,
-                                payload
-                        ));
-                        break;
+                        if (containsPathTraversalIndicators(body)) {
+                            addVulnerability(createVulnerability(
+                                    Severity.HIGH,
+                                    "Path Traversal",
+                                    "Parameter '" + paramName + "' is vulnerable to path traversal",
+                                    url,
+                                    payload
+                            ));
+                            break;
+                        }
                     }
                 }
             } catch (Exception e) {

@@ -57,20 +57,20 @@ public class XxeTest extends BaseVulnerabilityTest {
                         .addHeader("Content-Type", "application/xml")
                         .build();
 
-                Response response = context.getHttpClient().executeRequest(request);
+                try (Response response = context.getHttpClient().executeRequest(request)) {
+                    if (response.isSuccessful()) {
+                        String body = response.body() != null ? response.body().string() : "";
 
-                if (response.isSuccessful()) {
-                    String body = response.body() != null ? response.body().string() : "";
-
-                    if (containsXxeIndicators(body)) {
-                        addVulnerability(createVulnerability(
-                                Severity.HIGH,
-                                "XML External Entity (XXE) Injection",
-                                "Form at '" + form.getAction() + "' is vulnerable to XXE",
-                                form.getAction(),
-                                payload
-                        ));
-                        break;
+                        if (containsXxeIndicators(body)) {
+                            addVulnerability(createVulnerability(
+                                    Severity.HIGH,
+                                    "XML External Entity (XXE) Injection",
+                                    "Form at '" + form.getAction() + "' is vulnerable to XXE",
+                                    form.getAction(),
+                                    payload
+                            ));
+                            break;
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -93,20 +93,20 @@ public class XxeTest extends BaseVulnerabilityTest {
                             .addHeader("Content-Type", "application/xml")
                             .build();
 
-                    Response response = context.getHttpClient().executeRequest(request);
+                    try (Response response = context.getHttpClient().executeRequest(request)) {
+                        if (response.isSuccessful()) {
+                            String body = response.body() != null ? response.body().string() : "";
 
-                    if (response.isSuccessful()) {
-                        String body = response.body() != null ? response.body().string() : "";
-
-                        if (containsXxeIndicators(body)) {
-                            addVulnerability(createVulnerability(
-                                    Severity.HIGH,
-                                    "XML External Entity (XXE) Injection",
-                                    "Endpoint '" + endpoint + "' is vulnerable to XXE",
-                                    targetUrl,
-                                    payload
-                            ));
-                            break;
+                            if (containsXxeIndicators(body)) {
+                                addVulnerability(createVulnerability(
+                                        Severity.HIGH,
+                                        "XML External Entity (XXE) Injection",
+                                        "Endpoint '" + endpoint + "' is vulnerable to XXE",
+                                        targetUrl,
+                                        payload
+                                ));
+                                break;
+                            }
                         }
                     }
                 } catch (Exception e) {

@@ -52,21 +52,21 @@ public class SsrfTest extends BaseVulnerabilityTest {
         for (String payload : SSRF_PAYLOADS) {
             try {
                 String testUrl = injectPayload(url, paramName, encodeUrl(payload));
-                Response response = context.getHttpClient().get(testUrl, Collections.emptyMap());
+                try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {
+                    if (response.isSuccessful()) {
+                        String body = response.body() != null ? response.body().string() : "";
 
-                if (response.isSuccessful()) {
-                    String body = response.body() != null ? response.body().string() : "";
-
-                    // Check for indicators of SSRF
-                    if (containsSsrfIndicators(body, payload)) {
-                        addVulnerability(createVulnerability(
-                                Severity.HIGH,
-                                "Server-Side Request Forgery (SSRF)",
-                                "Parameter '" + paramName + "' may be vulnerable to SSRF",
-                                url,
-                                payload
-                        ));
-                        break;
+                        // Check for indicators of SSRF
+                        if (containsSsrfIndicators(body, payload)) {
+                            addVulnerability(createVulnerability(
+                                    Severity.HIGH,
+                                    "Server-Side Request Forgery (SSRF)",
+                                    "Parameter '" + paramName + "' may be vulnerable to SSRF",
+                                    url,
+                                    payload
+                            ));
+                            break;
+                        }
                     }
                 }
             } catch (Exception e) {

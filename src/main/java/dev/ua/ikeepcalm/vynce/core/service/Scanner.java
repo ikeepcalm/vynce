@@ -61,6 +61,9 @@ public class Scanner {
         ConsoleUI.debug("Initializing web crawler...");
         context.initializeCrawler();
 
+        // Start progress bar after crawler completes
+        progress.start();
+
         // NFR-4: Start intermediate results saver
         resultsSaver = new IntermediateResultsSaver(result);
         resultsSaver.start();

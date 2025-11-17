@@ -14,8 +14,14 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.fusesource.jansi.Ansi.ansi;
+import static org.fusesource.jansi.Ansi.Color.*;
+
 @Getter
 public class WebCrawler {
+
+    private static final char[] SPINNER_CHARS = {'|', '/', '-', '\\'};
+    private static final long UPDATE_INTERVAL_MS = 200; // Update every 200ms
 
     private final String baseUrl;
     private final VynceHttpClient httpClient;
@@ -24,6 +30,9 @@ public class WebCrawler {
     private final Set<String> discoveredUrls;
     private final List<FormData> discoveredForms;
     private final Map<String, List<String>> urlParameters;
+
+    private int spinnerIndex = 0;
+    private long lastUpdateTime = 0;
 
     public WebCrawler(String baseUrl, VynceHttpClient httpClient, int maxDepth) {
         this.baseUrl = normalizeUrl(baseUrl);
@@ -37,8 +46,52 @@ public class WebCrawler {
 
     public void crawl() {
         ConsoleUI.debug("Starting web crawl from: " + baseUrl);
+
+        if (!ConsoleUI.isVerbose()) {
+            updateCrawlStatus(); // Initial display
+        }
+
         crawlRecursive(baseUrl, 0);
+
+        if (!ConsoleUI.isVerbose()) {
+            clearCrawlStatus();
+        }
+
         ConsoleUI.debug("Crawl complete. Found " + discoveredUrls.size() + " URLs and " + discoveredForms.size() + " forms");
+    }
+
+    /**
+     * Update the crawler status with animation (only when not in verbose mode)
+     */
+    private void updateCrawlStatus() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastUpdateTime < UPDATE_INTERVAL_MS) {
+            return; // Don't update too frequently
+        }
+
+        lastUpdateTime = currentTime;
+        spinnerIndex = (spinnerIndex + 1) % SPINNER_CHARS.length;
+
+        String status = ansi()
+                .fg(CYAN).a("[" + SPINNER_CHARS[spinnerIndex] + "]").reset()
+                .a(" Crawling... ")
+                .fg(YELLOW).a(discoveredUrls.size()).reset()
+                .a(" URLs discovered, ")
+                .fg(GREEN).a(discoveredForms.size()).reset()
+                .a(" forms found")
+                .toString();
+
+        System.out.print("\r" + status);
+        System.out.flush();
+    }
+
+    /**
+     * Clear the crawler status line
+     */
+    private void clearCrawlStatus() {
+        // Clear the line and print final summary
+        System.out.print("\r" + " ".repeat(80) + "\r");
+        System.out.flush();
     }
 
     private void crawlRecursive(String url, int depth) {
@@ -56,30 +109,37 @@ public class WebCrawler {
 
         try {
             ConsoleUI.debug("Crawling: " + url + " (depth: " + depth + ")");
-            Response response = httpClient.get(url, Collections.emptyMap());
 
-            if (response.code() != 200) {
-                ConsoleUI.debug("Non-200 response for " + url + ": " + response.code());
-                return;
+            // Use try-with-resources to ensure response is always closed
+            try (Response response = httpClient.get(url, Collections.emptyMap())) {
+                if (response.code() != 200) {
+                    ConsoleUI.debug("Non-200 response for " + url + ": " + response.code());
+                    return;
+                }
+
+                String contentType = response.header("Content-Type", "");
+                if (!contentType.contains("text/html")) {
+                    ConsoleUI.debug("Skipping non-HTML content: " + contentType);
+                    return;
+                }
+
+                String body = response.body() != null ? response.body().string() : "";
+                Document doc = Jsoup.parse(body, url);
+
+                // Extract links
+                extractLinks(doc, depth);
+
+                // Extract forms
+                extractForms(doc, url);
+
+                // Extract URL parameters
+                extractUrlParameters(url);
+
+                // Update crawler status (if not in verbose mode)
+                if (!ConsoleUI.isVerbose()) {
+                    updateCrawlStatus();
+                }
             }
-
-            String contentType = response.header("Content-Type", "");
-            if (!contentType.contains("text/html")) {
-                ConsoleUI.debug("Skipping non-HTML content: " + contentType);
-                return;
-            }
-
-            String body = response.body() != null ? response.body().string() : "";
-            Document doc = Jsoup.parse(body, url);
-
-            // Extract links
-            extractLinks(doc, depth);
-
-            // Extract forms
-            extractForms(doc, url);
-
-            // Extract URL parameters
-            extractUrlParameters(url);
 
         } catch (IOException e) {
             ConsoleUI.debug("Error crawling " + url + ": " + e.getMessage());

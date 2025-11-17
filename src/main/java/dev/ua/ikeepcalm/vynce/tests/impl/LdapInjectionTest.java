@@ -55,33 +55,33 @@ public class LdapInjectionTest extends BaseVulnerabilityTest {
         for (String payload : LDAP_PAYLOADS) {
             try {
                 String testUrl = injectPayload(url, paramName, encodeUrl(payload));
-                Response response = context.getHttpClient().get(testUrl, Collections.emptyMap());
+                try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {
+                    if (response.isSuccessful()) {
+                        String body = response.body() != null ? response.body().string() : "";
 
-                if (response.isSuccessful()) {
-                    String body = response.body() != null ? response.body().string() : "";
+                        // Check for LDAP error messages
+                        if (containsLdapErrorIndicators(body)) {
+                            addVulnerability(createVulnerability(
+                                    Severity.HIGH,
+                                    "LDAP Injection",
+                                    "Parameter '" + paramName + "' may be vulnerable to LDAP injection",
+                                    url,
+                                    payload
+                            ));
+                            break;
+                        }
 
-                    // Check for LDAP error messages
-                    if (containsLdapErrorIndicators(body)) {
-                        addVulnerability(createVulnerability(
-                                Severity.HIGH,
-                                "LDAP Injection",
-                                "Parameter '" + paramName + "' may be vulnerable to LDAP injection",
-                                url,
-                                payload
-                        ));
-                        break;
-                    }
-
-                    // Check for different response with wildcard
-                    if (payload.equals("*") && body.length() > 1000) {
-                        addVulnerability(createVulnerability(
-                                Severity.MEDIUM,
-                                "Possible LDAP Injection",
-                                "Parameter '" + paramName + "' shows different response with LDAP wildcard",
-                                url,
-                                payload
-                        ));
-                        break;
+                        // Check for different response with wildcard
+                        if (payload.equals("*") && body.length() > 1000) {
+                            addVulnerability(createVulnerability(
+                                    Severity.MEDIUM,
+                                    "Possible LDAP Injection",
+                                    "Parameter '" + paramName + "' shows different response with LDAP wildcard",
+                                    url,
+                                    payload
+                            ));
+                            break;
+                        }
                     }
                 }
             } catch (Exception e) {

@@ -73,20 +73,20 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
         for (String payload : REDIRECT_PAYLOADS) {
             try {
                 String testUrl = injectPayload(url, paramName, encodeUrl(payload));
-                Response response = context.getHttpClient().get(testUrl, Collections.emptyMap());
+                try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {
+                    if (isRedirect(response)) {
+                        String location = response.header("Location");
 
-                if (isRedirect(response)) {
-                    String location = response.header("Location");
-
-                    if (location != null && (location.contains("evil.com") || location.contains("attacker.com") || location.contains("google.com"))) {
-                        addVulnerability(createVulnerability(
-                                Severity.MEDIUM,
-                                "Open Redirect",
-                                "Parameter '" + paramName + "' is vulnerable to open redirect",
-                                url,
-                                payload
-                        ));
-                        break;
+                        if (location != null && (location.contains("evil.com") || location.contains("attacker.com") || location.contains("google.com"))) {
+                            addVulnerability(createVulnerability(
+                                    Severity.MEDIUM,
+                                    "Open Redirect",
+                                    "Parameter '" + paramName + "' is vulnerable to open redirect",
+                                    url,
+                                    payload
+                            ));
+                            break;
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -99,20 +99,20 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
         for (String payload : REDIRECT_PAYLOADS) {
             try {
                 String testUrl = url + (url.contains("?") ? "&" : "?") + paramName + "=" + encodeUrl(payload);
-                Response response = context.getHttpClient().get(testUrl, Collections.emptyMap());
+                try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {
+                    if (isRedirect(response)) {
+                        String location = response.header("Location");
 
-                if (isRedirect(response)) {
-                    String location = response.header("Location");
-
-                    if (location != null && (location.contains("evil.com") || location.contains("attacker.com") || location.contains("google.com"))) {
-                        addVulnerability(createVulnerability(
-                                Severity.MEDIUM,
-                                "Open Redirect",
-                                "Parameter '" + paramName + "' is vulnerable to open redirect",
-                                url,
-                                payload
-                        ));
-                        break;
+                        if (location != null && (location.contains("evil.com") || location.contains("attacker.com") || location.contains("google.com"))) {
+                            addVulnerability(createVulnerability(
+                                    Severity.MEDIUM,
+                                    "Open Redirect",
+                                    "Parameter '" + paramName + "' is vulnerable to open redirect",
+                                    url,
+                                    payload
+                            ));
+                            break;
+                        }
                     }
                 }
             } catch (Exception e) {

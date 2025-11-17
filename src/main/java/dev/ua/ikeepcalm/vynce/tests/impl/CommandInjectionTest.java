@@ -58,34 +58,35 @@ public class CommandInjectionTest extends BaseVulnerabilityTest {
             try {
                 long startTime = System.currentTimeMillis();
                 String testUrl = injectPayload(url, paramName, payload);
-                Response response = context.getHttpClient().get(testUrl, Collections.emptyMap());
-                long duration = System.currentTimeMillis() - startTime;
+                try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {
+                    long duration = System.currentTimeMillis() - startTime;
 
-                if (response.isSuccessful()) {
-                    String body = response.body() != null ? response.body().string() : "";
+                    if (response.isSuccessful()) {
+                        String body = response.body() != null ? response.body().string() : "";
 
-                    // Check for command output indicators
-                    if (containsCommandOutputIndicators(body)) {
-                        addVulnerability(createVulnerability(
-                                Severity.CRITICAL,
-                                "Command Injection",
-                                "Parameter '" + paramName + "' is vulnerable to command injection",
-                                url,
-                                payload
-                        ));
-                        break;
-                    }
+                        // Check for command output indicators
+                        if (containsCommandOutputIndicators(body)) {
+                            addVulnerability(createVulnerability(
+                                    Severity.CRITICAL,
+                                    "Command Injection",
+                                    "Parameter '" + paramName + "' is vulnerable to command injection",
+                                    url,
+                                    payload
+                            ));
+                            break;
+                        }
 
-                    // Check for time-based injection (sleep commands)
-                    if (payload.contains("sleep") && duration > 4500) {
-                        addVulnerability(createVulnerability(
-                                Severity.CRITICAL,
-                                "Command Injection (Time-based)",
-                                "Parameter '" + paramName + "' is vulnerable to command injection (time-based detection)",
-                                url,
-                                payload
-                        ));
-                        break;
+                        // Check for time-based injection (sleep commands)
+                        if (payload.contains("sleep") && duration > 4500) {
+                            addVulnerability(createVulnerability(
+                                    Severity.CRITICAL,
+                                    "Command Injection (Time-based)",
+                                    "Parameter '" + paramName + "' is vulnerable to command injection (time-based detection)",
+                                    url,
+                                    payload
+                            ));
+                            break;
+                        }
                     }
                 }
             } catch (Exception e) {
