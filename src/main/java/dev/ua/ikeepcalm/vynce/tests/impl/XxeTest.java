@@ -1,7 +1,6 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
-import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.crawler.FormData;
@@ -36,15 +35,13 @@ public class XxeTest extends BaseVulnerabilityTest {
     }
 
     @Override
-    protected void runTests(ScanContext context) throws Exception {
-        // Test forms that might accept XML
+    protected void runTests(ScanContext context) {
         for (FormData form : context.getCrawler().getDiscoveredForms()) {
-            if ("POST".equalsIgnoreCase(form.getMethod())) {
+            if ("POST".equalsIgnoreCase(form.method())) {
                 testXxeInForm(context, form);
             }
         }
 
-        // Test common XML endpoints
         testXxeInEndpoints(context);
     }
 
@@ -52,7 +49,7 @@ public class XxeTest extends BaseVulnerabilityTest {
         for (String payload : XXE_PAYLOADS) {
             try {
                 Request request = new Request.Builder()
-                        .url(form.getAction())
+                        .url(form.action())
                         .post(RequestBody.create(payload, MediaType.parse("application/xml")))
                         .addHeader("Content-Type", "application/xml")
                         .build();
@@ -65,16 +62,15 @@ public class XxeTest extends BaseVulnerabilityTest {
                             addVulnerability(createVulnerability(
                                     Severity.HIGH,
                                     "XML External Entity (XXE) Injection",
-                                    "Form at '" + form.getAction() + "' is vulnerable to XXE",
-                                    form.getAction(),
+                                    "Form at '" + form.action() + "' is vulnerable to XXE",
+                                    form.action(),
                                     payload
                             ));
                             break;
                         }
                     }
                 }
-            } catch (Exception e) {
-                // Ignore errors
+            } catch (Exception ignored) {
             }
         }
     }
@@ -109,8 +105,7 @@ public class XxeTest extends BaseVulnerabilityTest {
                             }
                         }
                     }
-                } catch (Exception e) {
-                    // Ignore errors
+                } catch (Exception ignored) {
                 }
             }
         }

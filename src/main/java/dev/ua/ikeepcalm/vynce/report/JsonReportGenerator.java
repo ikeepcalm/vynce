@@ -27,7 +27,6 @@ public class JsonReportGenerator implements ReportGenerator {
         try {
             Map<String, Object> report = new HashMap<>();
 
-            // Metadata
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             metadata.put("scanner", "Vynce Scanner");
@@ -36,7 +35,6 @@ public class JsonReportGenerator implements ReportGenerator {
             metadata.put("tests_executed", result.getTestCount());
             report.put("metadata", metadata);
 
-            // Summary
             Map<String, Object> summary = new HashMap<>();
             summary.put("total_vulnerabilities", result.getVulnerabilities().size());
             summary.put("critical", countBySeverity(result.getVulnerabilities(), Severity.CRITICAL));
@@ -46,7 +44,6 @@ public class JsonReportGenerator implements ReportGenerator {
             summary.put("info", countBySeverity(result.getVulnerabilities(), Severity.INFO));
             report.put("summary", summary);
 
-            // Vulnerabilities
             List<Map<String, String>> vulns = result.getVulnerabilities().stream()
                     .map(this::vulnerabilityToMap)
                     .collect(Collectors.toList());
@@ -60,18 +57,18 @@ public class JsonReportGenerator implements ReportGenerator {
 
     private long countBySeverity(List<Vulnerability> vulnerabilities, Severity severity) {
         return vulnerabilities.stream()
-                .filter(v -> v.getSeverity() == severity)
+                .filter(v -> v.severity() == severity)
                 .count();
     }
 
     private Map<String, String> vulnerabilityToMap(Vulnerability vuln) {
         Map<String, String> map = new HashMap<>();
-        map.put("type", vuln.getType() != null ? vuln.getType().name() : "UNKNOWN");
-        map.put("severity", vuln.getSeverity().name());
-        map.put("title", vuln.getTitle());
-        map.put("description", vuln.getDescription());
-        map.put("url", vuln.getUrl());
-        map.put("payload", vuln.getPayload() != null ? vuln.getPayload() : "N/A");
+        map.put("type", vuln.type() != null ? vuln.type().name() : "UNKNOWN");
+        map.put("severity", vuln.severity().name());
+        map.put("title", vuln.title());
+        map.put("description", vuln.description());
+        map.put("url", vuln.url());
+        map.put("payload", vuln.payload() != null ? vuln.payload() : "N/A");
         return map;
     }
 

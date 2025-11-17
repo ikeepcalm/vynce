@@ -1,7 +1,6 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
-import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
@@ -26,12 +25,11 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
     }
 
     @Override
-    protected void runTests(ScanContext context) throws Exception {
+    protected void runTests(ScanContext context) {
         loadPayloads();
 
         String url = context.getTargetUrl();
 
-        // Only test if URL has parameters
         if (!url.contains("?")) {
             ConsoleUI.error("No URL parameters found for SQL injection testing");
             return;
@@ -42,13 +40,10 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
         for (String paramName : params.keySet()) {
             ConsoleUI.debug("Testing parameter: " + " " + paramName);
 
-            // Test 1: Error-based SQL injection
             testErrorBased(context, url, paramName);
 
-            // Test 2: Boolean-based blind SQL injection
             testBooleanBased(context, url, paramName);
 
-            // Test 3: Time-based blind SQL injection
             testTimeBased(context, url, paramName);
         }
     }
@@ -76,11 +71,11 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                         addVulnerability(createVulnerability(
                                 Severity.CRITICAL,
                                 "Error-based SQL Injection detected in parameter '" + paramName + "'. " +
-                                        "Database error messages were found in the response, indicating SQL syntax issues.",
+                                "Database error messages were found in the response, indicating SQL syntax issues.",
                                 testUrl
                         ));
                         ConsoleUI.warning("SQL Injection found: with payload: " + " " + paramName + payload);
-                        return; // One vulnerability per parameter is enough
+                        return;
                     }
                 }
 
@@ -92,12 +87,10 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
 
     private void testBooleanBased(ScanContext context, String url, String paramName) {
         try {
-            // Get baseline response
             try (Response baselineResponse = context.getHttpClient().get(url)) {
                 String baselineBody = context.getHttpClient().getBodyAsString(baselineResponse);
                 int baselineLength = baselineBody.length();
 
-                // Test with true condition
                 String truePayload = "1' AND '1'='1";
                 String trueUrl = injectPayload(url, paramName, encodeUrl(truePayload));
 
@@ -105,7 +98,6 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                     String trueBody = context.getHttpClient().getBodyAsString(trueResponse);
                     int trueLength = trueBody.length();
 
-                    // Test with false condition
                     String falsePayload = "1' AND '1'='2";
                     String falseUrl = injectPayload(url, paramName, encodeUrl(falsePayload));
 
@@ -113,13 +105,12 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                         String falseBody = context.getHttpClient().getBodyAsString(falseResponse);
                         int falseLength = falseBody.length();
 
-                        // Check if there's significant difference
                         if (Math.abs(trueLength - baselineLength) < 100 &&
-                                Math.abs(falseLength - baselineLength) > 500) {
+                            Math.abs(falseLength - baselineLength) > 500) {
                             addVulnerability(createVulnerability(
                                     Severity.CRITICAL,
                                     "Boolean-based blind SQL Injection detected in parameter '" + paramName + "'. " +
-                                            "The application responds differently to true and false SQL conditions.",
+                                    "The application responds differently to true and false SQL conditions.",
                                     url
                             ));
                             ConsoleUI.warning("Boolean-based SQL Injection found: " + " " + paramName);
@@ -134,25 +125,22 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
     }
 
     private void testTimeBased(ScanContext context, String url, String paramName) {
-        // Only test one time-based payload to avoid long delays
-        String payload = timePayloads.isEmpty() ? "'; SELECT SLEEP(5)--" : timePayloads.get(0);
+        String payload = timePayloads.isEmpty() ? "'; SELECT SLEEP(5)--" : timePayloads.getFirst();
 
         try {
             String testUrl = injectPayload(url, paramName, encodeUrl(payload));
 
             long startTime = System.currentTimeMillis();
             try (Response response = context.getHttpClient().get(testUrl)) {
-                // Just trigger the request
                 context.getHttpClient().getBodyAsString(response);
             }
             long duration = System.currentTimeMillis() - startTime;
 
-            // If response took significantly longer (4+ seconds for a 5-second sleep)
             if (duration > 4000) {
                 addVulnerability(createVulnerability(
                         Severity.CRITICAL,
                         "Time-based blind SQL Injection detected in parameter '" + paramName + "'. " +
-                                "The application response was delayed by " + duration + "ms, indicating SQL command execution.",
+                        "The application response was delayed by " + duration + "ms, indicating SQL command execution.",
                         testUrl
                 ));
                 ConsoleUI.warning("Time-based SQL Injection found: (delay: ms)" + " " + paramName + duration);

@@ -26,7 +26,6 @@ public class HtmlReportGenerator implements ReportGenerator {
         html.append("</head>\n");
         html.append("<body>\n");
 
-        // Header
         html.append("    <div class=\"header\">\n");
         html.append("        <h1>Vynce Security Scan Report</h1>\n");
         html.append("        <p class=\"timestamp\">Generated: ")
@@ -34,7 +33,6 @@ public class HtmlReportGenerator implements ReportGenerator {
                 .append("</p>\n");
         html.append("    </div>\n");
 
-        // Summary
         html.append("    <div class=\"summary\">\n");
         html.append("        <h2>Summary</h2>\n");
         html.append("        <div class=\"summary-grid\">\n");
@@ -66,26 +64,25 @@ public class HtmlReportGenerator implements ReportGenerator {
         html.append("        <p class=\"scan-info\">Scan Duration: ").append(result.getDuration()).append("ms | Tests Executed: ").append(result.getTestCount()).append("</p>\n");
         html.append("    </div>\n");
 
-        // Vulnerabilities
         if (!result.getVulnerabilities().isEmpty()) {
             html.append("    <div class=\"vulnerabilities\">\n");
             html.append("        <h2>Vulnerabilities</h2>\n");
 
             for (Vulnerability vuln : result.getVulnerabilities()) {
-                html.append("        <div class=\"vulnerability ").append(vuln.getSeverity().name().toLowerCase()).append("\">\n");
+                html.append("        <div class=\"vulnerability ").append(vuln.severity().name().toLowerCase()).append("\">\n");
                 html.append("            <div class=\"vuln-header\">\n");
-                html.append("                <span class=\"severity-badge ").append(vuln.getSeverity().name().toLowerCase()).append("\">")
-                        .append(vuln.getSeverity().name()).append("</span>\n");
-                html.append("                <h3>").append(escapeHtml(vuln.getTitle())).append("</h3>\n");
+                html.append("                <span class=\"severity-badge ").append(vuln.severity().name().toLowerCase()).append("\">")
+                        .append(vuln.severity().name()).append("</span>\n");
+                html.append("                <h3>").append(escapeHtml(vuln.title())).append("</h3>\n");
                 html.append("            </div>\n");
-                html.append("            <p class=\"vuln-description\">").append(escapeHtml(vuln.getDescription())).append("</p>\n");
+                html.append("            <p class=\"vuln-description\">").append(escapeHtml(vuln.description())).append("</p>\n");
                 html.append("            <div class=\"vuln-details\">\n");
-                if (vuln.getType() != null) {
-                    html.append("                <p><strong>Type:</strong> ").append(vuln.getType().name()).append("</p>\n");
+                if (vuln.type() != null) {
+                    html.append("                <p><strong>Type:</strong> ").append(vuln.type().name()).append("</p>\n");
                 }
-                html.append("                <p><strong>URL:</strong> <code>").append(escapeHtml(vuln.getUrl())).append("</code></p>\n");
-                if (vuln.getPayload() != null) {
-                    html.append("                <p><strong>Payload:</strong> <code>").append(escapeHtml(vuln.getPayload())).append("</code></p>\n");
+                html.append("                <p><strong>URL:</strong> <code>").append(escapeHtml(vuln.url())).append("</code></p>\n");
+                if (vuln.payload() != null) {
+                    html.append("                <p><strong>Payload:</strong> <code>").append(escapeHtml(vuln.payload())).append("</code></p>\n");
                 }
                 html.append("            </div>\n");
                 html.append("        </div>\n");
@@ -107,7 +104,7 @@ public class HtmlReportGenerator implements ReportGenerator {
 
     private long countBySeverity(List<Vulnerability> vulnerabilities, Severity severity) {
         return vulnerabilities.stream()
-                .filter(v -> v.getSeverity() == severity)
+                .filter(v -> v.severity() == severity)
                 .count();
     }
 

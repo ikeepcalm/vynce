@@ -19,8 +19,6 @@ import picocli.CommandLine.Command;
         subcommands = {
                 ScanCommand.class,
                 ReportCommand.class,
-//                ConfigCommand.class,
-//                UpdateCommand.class,
                 CommandLine.HelpCommand.class
         }
 )

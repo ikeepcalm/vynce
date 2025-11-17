@@ -12,8 +12,7 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(name = "list", description = "List all saved scan reports")
 class ReportListCommand implements Callable<Integer> {
 
-    private static final DateTimeFormatter DISPLAY_FORMAT =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter DISPLAY_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
     public Integer call() {
@@ -28,19 +27,15 @@ class ReportListCommand implements Callable<Integer> {
             return 0;
         }
 
-        // Print table header
-        System.out.printf("%-20s %-25s %-40s %-30s%n",
-            "ID", "Date", "Target", "Vulnerabilities");
+        System.out.printf("%-20s %-25s %-40s %-30s%n", "ID", "Date", "Target", "Vulnerabilities");
         System.out.println("─".repeat(120));
 
-        // Print each report
         for (ReportMetadata report : reports) {
             String timestamp = report.getTimestamp().format(DISPLAY_FORMAT);
             String target = truncate(report.getTargetUrl(), 38);
             String vulnerabilities = formatVulnerabilities(report);
 
-            System.out.printf("%-20s %-25s %-40s %-30s%n",
-                report.getId(), timestamp, target, vulnerabilities);
+            System.out.printf("%-20s %-25s %-40s %-30s%n", report.getId(), timestamp, target, vulnerabilities);
         }
 
         System.out.println();
@@ -69,7 +64,6 @@ class ReportListCommand implements Callable<Integer> {
             sb.append(report.getLowCount()).append(" Low, ");
         }
 
-        // Remove trailing comma and space
         if (sb.length() > 2) {
             sb.setLength(sb.length() - 2);
         }

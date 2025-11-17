@@ -1,7 +1,6 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
-import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
@@ -42,8 +41,7 @@ public class PathTraversalTest extends BaseVulnerabilityTest {
     }
 
     @Override
-    protected void runTests(ScanContext context) throws Exception {
-        // Test URL parameters
+    protected void runTests(ScanContext context) {
         for (String url : context.getCrawler().getUrlsWithParams()) {
             Map<String, String> params = extractParams(url);
             for (String paramName : params.keySet()) {
@@ -79,14 +77,12 @@ public class PathTraversalTest extends BaseVulnerabilityTest {
     }
 
     private boolean containsPathTraversalIndicators(String body) {
-        // Check for Unix/Linux file indicators
         for (String indicator : UNIX_INDICATORS) {
             if (body.contains(indicator)) {
                 return true;
             }
         }
 
-        // Check for Windows file indicators
         for (String indicator : WINDOWS_INDICATORS) {
             if (body.contains(indicator)) {
                 return true;

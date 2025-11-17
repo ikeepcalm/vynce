@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dev.ua.ikeepcalm.vynce.core.model.ScanResult;
 import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,11 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
-/**
- * Manages saved scan reports in the user's home directory.
- * Reports are stored in ~/.vynce/reports/ with metadata.
- * Formatted exports are stored in ~/.vynce/exports/
- */
+
 public class ReportManager {
 
     private static final String VYNCE_DIR = ".vynce";
@@ -29,7 +27,11 @@ public class ReportManager {
     private static final String EXPORTS_DIR = "exports";
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
+
+    @Getter
     private final Path reportsDirectory;
+
+    @Getter
     private final Path exportsDirectory;
     private final ObjectMapper objectMapper;
 
@@ -41,9 +43,7 @@ public class ReportManager {
         this.exportsDirectory = initializeExportsDirectory();
     }
 
-    /**
-     * Initialize the reports directory in user home
-     */
+
     private Path initializeReportsDirectory() {
         try {
             Path vynceDir = Paths.get(System.getProperty("user.home"), VYNCE_DIR);
@@ -61,9 +61,7 @@ public class ReportManager {
         }
     }
 
-    /**
-     * Initialize the exports directory in user home
-     */
+
     private Path initializeExportsDirectory() {
         try {
             Path vynceDir = Paths.get(System.getProperty("user.home"), VYNCE_DIR);
@@ -81,9 +79,7 @@ public class ReportManager {
         }
     }
 
-    /**
-     * Save a scan result with auto-generated ID
-     */
+
     public String saveReport(ScanResult result, String targetUrl) {
         if (reportsDirectory == null) {
             ConsoleUI.error("Reports directory not available");
@@ -91,32 +87,28 @@ public class ReportManager {
         }
 
         try {
-            String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
-            String reportId = timestamp;
+            String reportId = LocalDateTime.now().format(TIMESTAMP_FORMAT);
 
-            // Create report metadata
             ReportMetadata metadata = new ReportMetadata(
-                reportId,
-                targetUrl,
-                LocalDateTime.now(),
-                result.getVulnerabilities().size(),
-                result.getCriticalCount(),
-                result.getHighCount(),
-                result.getMediumCount(),
-                result.getLowCount(),
-                result.getDuration()
+                    reportId,
+                    targetUrl,
+                    LocalDateTime.now(),
+                    result.getVulnerabilities().size(),
+                    result.getCriticalCount(),
+                    result.getHighCount(),
+                    result.getMediumCount(),
+                    result.getLowCount(),
+                    result.getDuration()
             );
 
-            // Save metadata as JSON
             Path metadataPath = reportsDirectory.resolve(reportId + "_metadata.json");
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(metadataPath.toFile(), metadata);
 
-            // Save full scan result
             Path resultPath = reportsDirectory.resolve(reportId + "_result.json");
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(resultPath.toFile(), result);
 
-            ConsoleUI.debug("Saved report with ID: " + reportId);
-            return reportId;
+            ConsoleUI.debug("Saved report with ID: " + LocalDateTime.now().format(TIMESTAMP_FORMAT));
+            return LocalDateTime.now().format(TIMESTAMP_FORMAT);
 
         } catch (IOException e) {
             ConsoleUI.error("Failed to save report: " + e.getMessage());
@@ -124,9 +116,6 @@ public class ReportManager {
         }
     }
 
-    /**
-     * List all saved reports with metadata
-     */
     public List<ReportMetadata> listReports() {
         if (reportsDirectory == null) {
             return new ArrayList<>();
@@ -136,19 +125,18 @@ public class ReportManager {
 
         try (Stream<Path> files = Files.list(reportsDirectory)) {
             files.filter(p -> p.getFileName().toString().endsWith("_metadata.json"))
-                 .forEach(metadataFile -> {
-                     try {
-                         ReportMetadata metadata = objectMapper.readValue(
-                             metadataFile.toFile(),
-                             ReportMetadata.class
-                         );
-                         reports.add(metadata);
-                     } catch (IOException e) {
-                         ConsoleUI.debug("Failed to read metadata: " + metadataFile);
-                     }
-                 });
+                    .forEach(metadataFile -> {
+                        try {
+                            ReportMetadata metadata = objectMapper.readValue(
+                                    metadataFile.toFile(),
+                                    ReportMetadata.class
+                            );
+                            reports.add(metadata);
+                        } catch (IOException e) {
+                            ConsoleUI.debug("Failed to read metadata: " + metadataFile);
+                        }
+                    });
 
-            // Sort by timestamp descending (newest first)
             reports.sort(Comparator.comparing(ReportMetadata::getTimestamp).reversed());
 
         } catch (IOException e) {
@@ -158,9 +146,6 @@ public class ReportManager {
         return reports;
     }
 
-    /**
-     * Load a specific report by ID
-     */
     public ScanResult loadReport(String reportId) {
         if (reportsDirectory == null) {
             return null;
@@ -182,9 +167,6 @@ public class ReportManager {
         }
     }
 
-    /**
-     * Get report metadata by ID
-     */
     public ReportMetadata getReportMetadata(String reportId) {
         if (reportsDirectory == null) {
             return null;
@@ -205,9 +187,6 @@ public class ReportManager {
         }
     }
 
-    /**
-     * Export a report to a specific format
-     */
     public boolean exportReport(String reportId, String outputPath, String format) {
         ScanResult result = loadReport(reportId);
         if (result == null) {
@@ -230,9 +209,6 @@ public class ReportManager {
         }
     }
 
-    /**
-     * Delete a report by ID
-     */
     public boolean deleteReport(String reportId) {
         if (reportsDirectory == null) {
             return false;
@@ -266,24 +242,10 @@ public class ReportManager {
         }
     }
 
-    /**
-     * Get the reports directory path
-     */
-    public Path getReportsDirectory() {
-        return reportsDirectory;
-    }
-
-    /**
-     * Get the exports directory path
-     */
-    public Path getExportsDirectory() {
-        return exportsDirectory;
-    }
-
-    /**
-     * Report metadata for listing and quick access
-     */
+    @Setter
+    @Getter
     public static class ReportMetadata {
+
         private String id;
         private String targetUrl;
         private LocalDateTime timestamp;
@@ -294,12 +256,9 @@ public class ReportManager {
         private int lowCount;
         private long duration;
 
-        // Default constructor for Jackson
-        public ReportMetadata() {}
-
         public ReportMetadata(String id, String targetUrl, LocalDateTime timestamp,
-                            int totalVulnerabilities, int criticalCount, int highCount,
-                            int mediumCount, int lowCount, long duration) {
+                              int totalVulnerabilities, int criticalCount, int highCount,
+                              int mediumCount, int lowCount, long duration) {
             this.id = id;
             this.targetUrl = targetUrl;
             this.timestamp = timestamp;
@@ -311,34 +270,5 @@ public class ReportManager {
             this.duration = duration;
         }
 
-        // Getters and setters
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-
-        public String getTargetUrl() { return targetUrl; }
-        public void setTargetUrl(String targetUrl) { this.targetUrl = targetUrl; }
-
-        public LocalDateTime getTimestamp() { return timestamp; }
-        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
-
-        public int getTotalVulnerabilities() { return totalVulnerabilities; }
-        public void setTotalVulnerabilities(int totalVulnerabilities) {
-            this.totalVulnerabilities = totalVulnerabilities;
-        }
-
-        public int getCriticalCount() { return criticalCount; }
-        public void setCriticalCount(int criticalCount) { this.criticalCount = criticalCount; }
-
-        public int getHighCount() { return highCount; }
-        public void setHighCount(int highCount) { this.highCount = highCount; }
-
-        public int getMediumCount() { return mediumCount; }
-        public void setMediumCount(int mediumCount) { this.mediumCount = mediumCount; }
-
-        public int getLowCount() { return lowCount; }
-        public void setLowCount(int lowCount) { this.lowCount = lowCount; }
-
-        public long getDuration() { return duration; }
-        public void setDuration(long duration) { this.duration = duration; }
     }
 }

@@ -1,11 +1,10 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
-import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
-import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
+import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 import okhttp3.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,13 +24,11 @@ public class CsrfTest extends BaseVulnerabilityTest {
             String html = context.getHttpClient().getBodyAsString(response);
             Document doc = Jsoup.parse(html);
 
-            // Check forms for CSRF tokens
             Elements forms = doc.select("form");
 
             for (Element form : forms) {
                 String method = form.attr("method").toUpperCase();
 
-                // Only check POST, PUT, DELETE forms
                 if (method.equals("POST") || method.equals("PUT") || method.equals("DELETE") || method.isEmpty()) {
                     if (!hasCsrfToken(form)) {
                         String action = form.attr("action");
@@ -48,7 +45,6 @@ public class CsrfTest extends BaseVulnerabilityTest {
     }
 
     private boolean hasCsrfToken(Element form) {
-        // Check for common CSRF token field names
         String[] tokenNames = {"csrf", "token", "_token", "csrf_token", "csrftoken", "authenticity_token", "__RequestVerificationToken"};
 
         for (String tokenName : tokenNames) {

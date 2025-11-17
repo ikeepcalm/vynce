@@ -1,8 +1,6 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
-import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
-import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
@@ -68,7 +66,6 @@ public class SecurityHeadersTest extends BaseVulnerabilityTest {
     protected void runTests(ScanContext context) throws Exception {
         try (Response response = context.getHttpClient().get(context.getTargetUrl())) {
 
-            // Check for missing security headers
             for (Map.Entry<String, SecurityHeader> entry : REQUIRED_HEADERS.entrySet()) {
                 String headerName = entry.getKey();
                 String headerValue = response.header(headerName);
@@ -85,10 +82,8 @@ public class SecurityHeadersTest extends BaseVulnerabilityTest {
                 }
             }
 
-            // Check for information disclosure headers
             checkInformationDisclosure(response, context);
 
-            // Check HSTS for HTTPS sites
             if (context.getTargetUrl().startsWith("https://")) {
                 checkHsts(response, context);
             }
@@ -132,7 +127,6 @@ public class SecurityHeadersTest extends BaseVulnerabilityTest {
                 ));
             }
 
-            // Check for weak max-age
             if (hsts.contains("max-age=")) {
                 String[] parts = hsts.split("max-age=");
                 if (parts.length > 1) {
@@ -155,15 +149,6 @@ public class SecurityHeadersTest extends BaseVulnerabilityTest {
         }
     }
 
-    private static class SecurityHeader {
-        final Severity severity;
-        final String description;
-        final String purpose;
-
-        SecurityHeader(Severity severity, String description, String purpose) {
-            this.severity = severity;
-            this.description = description;
-            this.purpose = purpose;
-        }
+    private record SecurityHeader(Severity severity, String description, String purpose) {
     }
 }

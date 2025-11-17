@@ -1,7 +1,6 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
-import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.crawler.FormData;
@@ -33,8 +32,7 @@ public class SsrfTest extends BaseVulnerabilityTest {
     }
 
     @Override
-    protected void runTests(ScanContext context) throws Exception {
-        // Test URL parameters
+    protected void runTests(ScanContext context) {
         for (String url : context.getCrawler().getUrlsWithParams()) {
             Map<String, String> params = extractParams(url);
             for (String paramName : params.keySet()) {
@@ -42,7 +40,6 @@ public class SsrfTest extends BaseVulnerabilityTest {
             }
         }
 
-        // Test forms
         for (FormData form : context.getCrawler().getDiscoveredForms()) {
             testSsrfInForm(context, form);
         }
@@ -56,7 +53,6 @@ public class SsrfTest extends BaseVulnerabilityTest {
                     if (response.isSuccessful()) {
                         String body = response.body() != null ? response.body().string() : "";
 
-                        // Check for indicators of SSRF
                         if (containsSsrfIndicators(body, payload)) {
                             addVulnerability(createVulnerability(
                                     Severity.HIGH,
@@ -70,23 +66,22 @@ public class SsrfTest extends BaseVulnerabilityTest {
                     }
                 }
             } catch (Exception e) {
-                // Ignore errors, they might indicate SSRF blocking
             }
         }
     }
 
     private void testSsrfInForm(ScanContext context, FormData form) {
-        for (String paramName : form.getParameters().keySet()) {
+        for (String paramName : form.parameters().keySet()) {
             for (String payload : SSRF_PAYLOADS) {
                 try {
-                    Map<String, String> modifiedParams = form.getParameters();
+                    Map<String, String> modifiedParams = form.parameters();
                     modifiedParams.put(paramName, payload);
 
                     Response response;
-                    if ("POST".equalsIgnoreCase(form.getMethod())) {
-                        response = context.getHttpClient().post(form.getAction(), modifiedParams, Collections.emptyMap());
+                    if ("POST".equalsIgnoreCase(form.method())) {
+                        response = context.getHttpClient().post(form.action(), modifiedParams, Collections.emptyMap());
                     } else {
-                        String testUrl = buildUrlWithParams(form.getAction(), modifiedParams);
+                        String testUrl = buildUrlWithParams(form.action(), modifiedParams);
                         response = context.getHttpClient().get(testUrl, Collections.emptyMap());
                     }
 
@@ -98,26 +93,25 @@ public class SsrfTest extends BaseVulnerabilityTest {
                                     Severity.HIGH,
                                     "Server-Side Request Forgery (SSRF)",
                                     "Form parameter '" + paramName + "' may be vulnerable to SSRF",
-                                    form.getAction(),
+                                    form.action(),
                                     payload
                             ));
                             break;
                         }
                     }
                 } catch (Exception e) {
-                    // Ignore errors
                 }
             }
         }
     }
 
     private boolean containsSsrfIndicators(String body, String payload) {
-        // Check for various SSRF indicators
+
         if (payload.contains("169.254.169.254") && body.contains("ami-id")) {
-            return true;  // AWS metadata
+            return true;
         }
         if (payload.contains("metadata.google.internal") && body.contains("project-id")) {
-            return true;  // GCP metadata
+            return true;
         }
         if (payload.contains("localhost") || payload.contains("127.0.0.1")) {
             return body.contains("root:") || body.contains("daemon:") || body.contains("<!DOCTYPE");

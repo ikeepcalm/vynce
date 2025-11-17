@@ -2,7 +2,6 @@ package dev.ua.ikeepcalm.vynce.tests.impl;
 import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
-import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
@@ -26,17 +25,15 @@ public class XssTest extends BaseVulnerabilityTest {
     }
 
     @Override
-    protected void runTests(ScanContext context) throws Exception {
+    protected void runTests(ScanContext context) {
         loadPayloads();
 
         String url = context.getTargetUrl();
 
-        // Test reflected XSS in URL parameters
         if (url.contains("?")) {
             testReflectedXss(context, url);
         }
 
-        // Test XSS in main page
         testPageXss(context, url);
     }
 
@@ -56,7 +53,6 @@ public class XssTest extends BaseVulnerabilityTest {
         for (String paramName : params.keySet()) {
             ConsoleUI.debug("Testing parameter for XSS: " + " " + paramName);
 
-            // Test basic payloads
             for (String payload : basicPayloads) {
                 if (testPayload(context, url, paramName, payload)) {
                     addVulnerability(createVulnerability(
@@ -66,11 +62,10 @@ public class XssTest extends BaseVulnerabilityTest {
                             url
                     ));
                     ConsoleUI.warning("Reflected XSS found in parameter: " + " " + paramName);
-                    return; // One vulnerability per parameter
+                    return;
                 }
             }
 
-            // Test attribute-based payloads
             for (String payload : attributePayloads) {
                 if (testPayload(context, url, paramName, payload)) {
                     addVulnerability(createVulnerability(
@@ -84,7 +79,6 @@ public class XssTest extends BaseVulnerabilityTest {
                 }
             }
 
-            // Test JavaScript context payloads
             for (String payload : jsPayloads) {
                 if (testJsPayload(context, url, paramName, payload)) {
                     addVulnerability(createVulnerability(
@@ -102,14 +96,12 @@ public class XssTest extends BaseVulnerabilityTest {
 
     private boolean testPayload(ScanContext context, String url, String paramName, String payload) {
         try {
-            // Test with URL-encoded payload
             String encodedPayload = URLEncoder.encode(payload, StandardCharsets.UTF_8);
             String testUrl = injectPayload(url, paramName, encodedPayload);
 
             try (Response response = context.getHttpClient().get(testUrl)) {
                 String body = context.getHttpClient().getBodyAsString(response);
 
-                // Check if payload is reflected without proper encoding
                 if (isReflectedUnsafe(body, payload)) {
                     ConsoleUI.debug("XSS payload reflected: " + " " + payload);
                     return true;
@@ -130,7 +122,6 @@ public class XssTest extends BaseVulnerabilityTest {
             try (Response response = context.getHttpClient().get(testUrl)) {
                 String body = context.getHttpClient().getBodyAsString(response);
 
-                // Check if payload appears in JavaScript context
                 if (body.contains(payload) || body.contains(payload.replace("javascript:", ""))) {
                     ConsoleUI.debug("JavaScript XSS payload reflected: " + " " + payload);
                     return true;
@@ -145,12 +136,10 @@ public class XssTest extends BaseVulnerabilityTest {
     }
 
     private boolean isReflectedUnsafe(String body, String payload) {
-        // Check for exact match (completely unencoded)
         if (body.contains(payload)) {
             return true;
         }
 
-        // Check for partially encoded variations
         String[] dangerousPatterns = {
                 "<script>",
                 "onerror=",
@@ -178,7 +167,6 @@ public class XssTest extends BaseVulnerabilityTest {
             try (Response response = context.getHttpClient().get(url)) {
                 String body = context.getHttpClient().getBodyAsString(response);
 
-                // Check for common XSS indicators in the page
                 checkForDangerousPatterns(body, url);
             }
 
@@ -188,7 +176,6 @@ public class XssTest extends BaseVulnerabilityTest {
     }
 
     private void checkForDangerousPatterns(String body, String url) {
-        // Check for eval() usage
         if (body.matches("(?i).*eval\\s*\\(.*\\).*")) {
             addVulnerability(createVulnerability(
                     Severity.MEDIUM,
@@ -197,7 +184,6 @@ public class XssTest extends BaseVulnerabilityTest {
             ));
         }
 
-        // Check for innerHTML usage with user input
         if (body.matches("(?i).*innerHTML\\s*=.*")) {
             addVulnerability(createVulnerability(
                     Severity.LOW,
@@ -206,7 +192,6 @@ public class XssTest extends BaseVulnerabilityTest {
             ));
         }
 
-        // Check for document.write() usage
         if (body.matches("(?i).*document\\.write\\s*\\(.*\\).*")) {
             addVulnerability(createVulnerability(
                     Severity.LOW,

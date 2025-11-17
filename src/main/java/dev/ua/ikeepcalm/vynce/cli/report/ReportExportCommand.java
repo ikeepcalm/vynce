@@ -16,12 +16,11 @@ class ReportExportCommand implements Callable<Integer> {
     private String outputFile;
 
     @CommandLine.Parameters(index = "2", description = "Format: json, html, or markdown",
-                          defaultValue = "html")
+            defaultValue = "html")
     private String format;
 
     @Override
     public Integer call() {
-        // Validate format
         String normalizedFormat = format.toLowerCase();
         if (!normalizedFormat.equals("json") &&
             !normalizedFormat.equals("html") &&
@@ -32,7 +31,6 @@ class ReportExportCommand implements Callable<Integer> {
             return 1;
         }
 
-        // Normalize 'md' to 'markdown'
         if (normalizedFormat.equals("md")) {
             normalizedFormat = "markdown";
         }

@@ -12,13 +12,13 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ScanResult {
 
-    @Setter
-    private long duration;
-
-    @Setter
-    private int testCount;
-
     private final List<Vulnerability> vulnerabilities;
+    @Setter
+
+    private long duration;
+    @Setter
+
+    private int testCount;
 
     public ScanResult() {
         this.vulnerabilities = new java.util.ArrayList<>();
@@ -32,7 +32,7 @@ public class ScanResult {
     public int getCriticalCount() {
         int criticalCount = 0;
         for (Vulnerability vulnerability : vulnerabilities) {
-            if (vulnerability.getSeverity() == Severity.CRITICAL) {
+            if (vulnerability.severity() == Severity.CRITICAL) {
                 criticalCount++;
             }
         }
@@ -44,7 +44,7 @@ public class ScanResult {
     public int getHighCount() {
         int highCount = 0;
         for (Vulnerability vulnerability : vulnerabilities) {
-            if (vulnerability.getSeverity() == Severity.HIGH) {
+            if (vulnerability.severity() == Severity.HIGH) {
                 highCount++;
             }
         }
@@ -56,7 +56,7 @@ public class ScanResult {
     public int getMediumCount() {
         int mediumCount = 0;
         for (Vulnerability vulnerability : vulnerabilities) {
-            if (vulnerability.getSeverity() == Severity.MEDIUM) {
+            if (vulnerability.severity() == Severity.MEDIUM) {
                 mediumCount++;
             }
         }
@@ -68,7 +68,7 @@ public class ScanResult {
     public int getLowCount() {
         int lowCount = 0;
         for (Vulnerability vulnerability : vulnerabilities) {
-            if (vulnerability.getSeverity() == Severity.LOW) {
+            if (vulnerability.severity() == Severity.LOW) {
                 lowCount++;
             }
         }

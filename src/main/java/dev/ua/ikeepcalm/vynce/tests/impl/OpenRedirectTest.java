@@ -1,7 +1,6 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
-import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
@@ -40,8 +39,7 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
     }
 
     @Override
-    protected void runTests(ScanContext context) throws Exception {
-        // Test URL parameters
+    protected void runTests(ScanContext context) {
         for (String url : context.getCrawler().getUrlsWithParams()) {
             Map<String, String> params = extractParams(url);
             for (String paramName : params.keySet()) {
@@ -51,7 +49,6 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
             }
         }
 
-        // Test discovered URLs for common redirect parameters
         for (String url : context.getCrawler().getAllUrls()) {
             for (String redirectParam : REDIRECT_PARAMS) {
                 testOpenRedirectParameter(context, url, redirectParam);

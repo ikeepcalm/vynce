@@ -14,12 +14,10 @@ public class MarkdownReportGenerator implements ReportGenerator {
     public String generate(ScanResult result) {
         StringBuilder md = new StringBuilder();
 
-        // Header
         md.append("# Vynce Security Scan Report\n\n");
         md.append("**Generated:** ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append("\n\n");
         md.append("---\n\n");
 
-        // Summary
         md.append("## Summary\n\n");
         md.append("| Metric | Count |\n");
         md.append("|--------|-------|\n");
@@ -32,29 +30,27 @@ public class MarkdownReportGenerator implements ReportGenerator {
         md.append("| Scan Duration | ").append(result.getDuration()).append("ms |\n");
         md.append("| Tests Executed | ").append(result.getTestCount()).append(" |\n\n");
 
-        // Vulnerabilities
         if (!result.getVulnerabilities().isEmpty()) {
             md.append("## Vulnerabilities\n\n");
 
-            // Group by severity
             for (Severity severity : Severity.values()) {
                 List<Vulnerability> vulnsOfSeverity = result.getVulnerabilities().stream()
-                        .filter(v -> v.getSeverity() == severity)
+                        .filter(v -> v.severity() == severity)
                         .toList();
 
                 if (!vulnsOfSeverity.isEmpty()) {
                     md.append("### ").append(getSeverityEmoji(severity)).append(" ").append(severity.name()).append("\n\n");
 
                     for (Vulnerability vuln : vulnsOfSeverity) {
-                        md.append("#### ").append(vuln.getTitle()).append("\n\n");
-                        if (vuln.getType() != null) {
-                            md.append("**Type:** ").append(vuln.getType().name()).append("\n\n");
+                        md.append("#### ").append(vuln.title()).append("\n\n");
+                        if (vuln.type() != null) {
+                            md.append("**Type:** ").append(vuln.type().name()).append("\n\n");
                         }
-                        md.append("**Description:** ").append(vuln.getDescription()).append("\n\n");
-                        md.append("**URL:** `").append(vuln.getUrl()).append("`\n\n");
+                        md.append("**Description:** ").append(vuln.description()).append("\n\n");
+                        md.append("**URL:** `").append(vuln.url()).append("`\n\n");
 
-                        if (vuln.getPayload() != null) {
-                            md.append("**Payload:**\n```\n").append(vuln.getPayload()).append("\n```\n\n");
+                        if (vuln.payload() != null) {
+                            md.append("**Payload:**\n```\n").append(vuln.payload()).append("\n```\n\n");
                         }
 
                         md.append("---\n\n");
@@ -71,7 +67,7 @@ public class MarkdownReportGenerator implements ReportGenerator {
 
     private long countBySeverity(List<Vulnerability> vulnerabilities, Severity severity) {
         return vulnerabilities.stream()
-                .filter(v -> v.getSeverity() == severity)
+                .filter(v -> v.severity() == severity)
                 .count();
     }
 

@@ -21,9 +21,7 @@ public class ReportFactory {
         return generator;
     }
 
-    /**
-     * Get a report generator by format name (string)
-     */
+
     public static ReportGenerator getGenerator(String formatName) {
         ReportFormat format = switch (formatName.toLowerCase()) {
             case "json" -> ReportFormat.JSON;

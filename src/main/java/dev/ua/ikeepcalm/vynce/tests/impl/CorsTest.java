@@ -23,7 +23,7 @@ public class CorsTest extends BaseVulnerabilityTest {
     }
 
     @Override
-    protected void runTests(ScanContext context) throws Exception {
+    protected void runTests(ScanContext context) {
         testCorsConfiguration(context);
     }
 
@@ -38,7 +38,6 @@ public class CorsTest extends BaseVulnerabilityTest {
                     String acac = response.header("Access-Control-Allow-Credentials");
 
                     if (acao != null) {
-                        // Check for wildcard with credentials
                         if ("*".equals(acao) && "true".equalsIgnoreCase(acac)) {
                             addVulnerability(createVulnerability(
                                     Severity.HIGH,
@@ -49,7 +48,6 @@ public class CorsTest extends BaseVulnerabilityTest {
                             ));
                         }
 
-                        // Check if arbitrary origin is reflected
                         if (acao.equals(testOrigin)) {
                             Severity severity = "true".equalsIgnoreCase(acac) ? Severity.HIGH : Severity.MEDIUM;
                             addVulnerability(createVulnerability(
@@ -61,7 +59,6 @@ public class CorsTest extends BaseVulnerabilityTest {
                             ));
                         }
 
-                        // Check for null origin
                         if ("null".equals(acao) && testOrigin.equals("null")) {
                             addVulnerability(createVulnerability(
                                     Severity.MEDIUM,
@@ -74,11 +71,9 @@ public class CorsTest extends BaseVulnerabilityTest {
                     }
                 }
             } catch (Exception e) {
-                // Ignore errors
             }
         }
 
-        // Check for missing CORS headers on API endpoints
         checkMissingCorsHeaders(context);
     }
 
@@ -101,7 +96,6 @@ public class CorsTest extends BaseVulnerabilityTest {
                     ));
                 }
             } catch (Exception e) {
-                // Ignore errors
             }
         }
     }

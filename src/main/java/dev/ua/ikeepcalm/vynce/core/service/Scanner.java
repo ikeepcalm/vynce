@@ -14,10 +14,10 @@ import dev.ua.ikeepcalm.vynce.ui.ScanProgress;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ExecutorCompletionService;
 
 public class Scanner {
 
@@ -38,9 +38,7 @@ public class Scanner {
         this.context = new ScanContext(targetUrl, config);
     }
 
-    /**
-     * Stop the scan gracefully
-     */
+
     public void stop() {
         stopping = true;
         if (executor != null && !executor.isShutdown()) {
@@ -57,23 +55,23 @@ public class Scanner {
             return result;
         }
 
-        // Initialize crawler first
+
         ConsoleUI.debug("Initializing web crawler...");
         context.initializeCrawler();
 
-        // Start progress bar after crawler completes
+
         progress.start();
 
-        // NFR-4: Start intermediate results saver
+
         resultsSaver = new IntermediateResultsSaver(result);
         resultsSaver.start();
 
         executor = Executors.newFixedThreadPool(config.getThreads());
         ExecutorCompletionService<TestResult> completionService =
-            new ExecutorCompletionService<>(executor);
+                new ExecutorCompletionService<>(executor);
 
         try {
-            // Submit all tests
+
             for (TestType testType : testTypes) {
                 if (stopping) break;
                 completionService.submit(() -> {
@@ -82,18 +80,18 @@ public class Scanner {
                 });
             }
 
-            // Process results as they complete
+
             int tasksSubmitted = testTypes.size();
             for (int i = 0; i < tasksSubmitted; i++) {
                 if (stopping) break;
                 try {
-                    Future<TestResult> future = completionService.take(); // Blocks until next result
+                    Future<TestResult> future = completionService.take();
                     TestResult testResult = future.get();
 
-                    // Update progress when test completes
+
                     progress.update(testResult.testType.getDisplayName());
 
-                    // Add vulnerabilities to result
+
                     result.addVulnerabilities(testResult.vulnerabilities);
                     progress.updateVulnerabilityCount(result.getVulnerabilities().size());
                 } catch (Exception e) {
@@ -105,7 +103,7 @@ public class Scanner {
             }
 
         } finally {
-            // NFR-4: Stop intermediate results saver and cleanup temp files
+
             if (resultsSaver != null) {
                 resultsSaver.stop();
             }
@@ -131,24 +129,23 @@ public class Scanner {
 
             List<Vulnerability> vulnerabilities = testInstance.execute(context);
 
-            // Only print vulnerabilities during scan if in verbose mode
-            // Otherwise, they'll be displayed in the final results section
+
             if (!vulnerabilities.isEmpty() && ConsoleUI.isVerbose()) {
                 for (Vulnerability vuln : vulnerabilities) {
-                    // FR-10: Immediate notification of critical vulnerabilities
-                    if (vuln.getSeverity() == Severity.CRITICAL) {
+
+                    if (vuln.severity() == Severity.CRITICAL) {
                         ConsoleUI.error("⚠️  CRITICAL VULNERABILITY FOUND!");
-                        ConsoleUI.vulnerability(testType, vuln.getSeverity(),
-                                vuln.getDescription());
-                        ConsoleUI.error("Location: " + vuln.getUrl());
+                        ConsoleUI.vulnerability(testType, vuln.severity(),
+                                vuln.description());
+                        ConsoleUI.error("Location: " + vuln.url());
                     } else {
-                        ConsoleUI.vulnerability(testType, vuln.getSeverity(),
-                                vuln.getDescription());
+                        ConsoleUI.vulnerability(testType, vuln.severity(),
+                                vuln.description());
                     }
                 }
             }
 
-            // NFR-4: Save intermediate results after each test completion
+
             if (resultsSaver != null) {
                 resultsSaver.saveAfterTest();
             }
@@ -164,16 +161,7 @@ public class Scanner {
         }
     }
 
-    /**
-     * Helper class to hold test results
-     */
-    private static class TestResult {
-        final TestType testType;
-        final List<Vulnerability> vulnerabilities;
 
-        TestResult(TestType testType, List<Vulnerability> vulnerabilities) {
-            this.testType = testType;
-            this.vulnerabilities = vulnerabilities;
-        }
+    private record TestResult(TestType testType, List<Vulnerability> vulnerabilities) {
     }
 }

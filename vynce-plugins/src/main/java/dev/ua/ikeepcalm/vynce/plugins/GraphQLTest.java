@@ -13,10 +13,7 @@ import okhttp3.Response;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Example custom plugin for testing GraphQL-specific vulnerabilities.
- * This demonstrates how to create a third-party test plugin for Vynce Scanner.
- */
+
 public class GraphQLTest extends BaseVulnerabilityTest {
 
     private static final List<String> GRAPHQL_INTROSPECTION_QUERIES = Arrays.asList(
@@ -36,14 +33,11 @@ public class GraphQLTest extends BaseVulnerabilityTest {
 
     @Override
     public TestType getTestType() {
-        // For custom tests, you might want to add a new TestType
-        // For this example, we'll reuse an existing one
-        return TestType.SSRF;  // Replace with custom TestType in production
+        return TestType.SSRF;
     }
 
     @Override
     protected void runTests(ScanContext context) throws Exception {
-        // Test common GraphQL endpoints
         for (String path : GRAPHQL_PATHS) {
             String graphqlUrl = context.getTargetUrl() + path;
             testGraphQLIntrospection(context, graphqlUrl);
@@ -65,7 +59,6 @@ public class GraphQLTest extends BaseVulnerabilityTest {
                 if (response.isSuccessful()) {
                     String body = response.body() != null ? response.body().string() : "";
 
-                    // Check if introspection is enabled
                     if (body.contains("__schema") || body.contains("__type") || body.contains("queryType")) {
                         addVulnerability(createVulnerability(
                                 Severity.MEDIUM,
@@ -77,8 +70,7 @@ public class GraphQLTest extends BaseVulnerabilityTest {
                         break;
                     }
                 }
-            } catch (Exception e) {
-                // Ignore errors
+            } catch (Exception ignored) {
             }
         }
     }
@@ -106,7 +98,6 @@ public class GraphQLTest extends BaseVulnerabilityTest {
             if (response.isSuccessful()) {
                 String body = response.body() != null ? response.body().string() : "";
 
-                // Check if batching is allowed (response contains multiple results)
                 if (body.contains("\"data\"") && body.split("\"data\"").length > 2) {
                     addVulnerability(createVulnerability(
                             Severity.LOW,
@@ -117,8 +108,7 @@ public class GraphQLTest extends BaseVulnerabilityTest {
                     ));
                 }
             }
-        } catch (Exception e) {
-            // Ignore errors
+        } catch (Exception ignored) {
         }
     }
 }

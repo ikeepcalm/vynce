@@ -31,7 +31,6 @@ public class ScanConfig {
     @Builder.Default
     private int maxRetries = 2;
 
-    // NFR-2: Authentication credentials (sensitive data)
     private String username;
     private String password;
     private String apiKey;
@@ -40,30 +39,26 @@ public class ScanConfig {
     @Builder.Default
     private Map<String, String> customHeaders = new HashMap<>();
 
-    /**
-     * NFR-2: Override toString to prevent logging sensitive data
-     */
+
     @Override
     public String toString() {
         return "ScanConfig{" +
-                "timeout=" + timeout +
-                ", followRedirects=" + followRedirects +
-                ", userAgent='" + userAgent + '\'' +
-                ", requestDelay=" + requestDelay +
-                ", threads=" + threads +
-                ", crawlDepth=" + crawlDepth +
-                ", maxRetries=" + maxRetries +
-                ", username='" + (username != null ? "***REDACTED***" : "null") + '\'' +
-                ", password='" + (password != null ? "***REDACTED***" : "null") + '\'' +
-                ", apiKey='" + (apiKey != null ? "***REDACTED***" : "null") + '\'' +
-                ", bearerToken='" + (bearerToken != null ? "***REDACTED***" : "null") + '\'' +
-                ", customHeaders=" + redactHeaders() +
-                '}';
+               "timeout=" + timeout +
+               ", followRedirects=" + followRedirects +
+               ", userAgent='" + userAgent + '\'' +
+               ", requestDelay=" + requestDelay +
+               ", threads=" + threads +
+               ", crawlDepth=" + crawlDepth +
+               ", maxRetries=" + maxRetries +
+               ", username='" + (username != null ? "***REDACTED***" : "null") + '\'' +
+               ", password='" + (password != null ? "***REDACTED***" : "null") + '\'' +
+               ", apiKey='" + (apiKey != null ? "***REDACTED***" : "null") + '\'' +
+               ", bearerToken='" + (bearerToken != null ? "***REDACTED***" : "null") + '\'' +
+               ", customHeaders=" + redactHeaders() +
+               '}';
     }
 
-    /**
-     * NFR-2: Redact sensitive headers (Authorization, API-Key, etc.)
-     */
+
     private Map<String, String> redactHeaders() {
         if (customHeaders == null || customHeaders.isEmpty()) {
             return customHeaders;

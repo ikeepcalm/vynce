@@ -1,7 +1,6 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
-import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
@@ -41,8 +40,7 @@ public class LdapInjectionTest extends BaseVulnerabilityTest {
     }
 
     @Override
-    protected void runTests(ScanContext context) throws Exception {
-        // Test URL parameters
+    protected void runTests(ScanContext context) {
         for (String url : context.getCrawler().getUrlsWithParams()) {
             Map<String, String> params = extractParams(url);
             for (String paramName : params.keySet()) {
@@ -59,7 +57,6 @@ public class LdapInjectionTest extends BaseVulnerabilityTest {
                     if (response.isSuccessful()) {
                         String body = response.body() != null ? response.body().string() : "";
 
-                        // Check for LDAP error messages
                         if (containsLdapErrorIndicators(body)) {
                             addVulnerability(createVulnerability(
                                     Severity.HIGH,
@@ -71,7 +68,6 @@ public class LdapInjectionTest extends BaseVulnerabilityTest {
                             break;
                         }
 
-                        // Check for different response with wildcard
                         if (payload.equals("*") && body.length() > 1000) {
                             addVulnerability(createVulnerability(
                                     Severity.MEDIUM,
@@ -85,7 +81,6 @@ public class LdapInjectionTest extends BaseVulnerabilityTest {
                     }
                 }
             } catch (Exception e) {
-                // Ignore errors
             }
         }
     }

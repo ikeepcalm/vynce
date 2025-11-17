@@ -4,12 +4,10 @@ import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
 
-import java.time.temporal.ChronoUnit;
-
 public class ScanProgress {
 
     private ProgressBar progressBar;
-    private int totalTests;
+    private final int totalTests;
     private int completed;
     private volatile int vulnerabilitiesFound = 0;
     private String currentTestName = "";
@@ -19,12 +17,9 @@ public class ScanProgress {
         this.completed = 0;
     }
 
-    /**
-     * Start the progress bar display (call this after crawler completes)
-     */
     public void start() {
         this.progressBar = new ProgressBarBuilder()
-                .setTaskName("\u001B[32mScanning\u001B[0m") // Green "Scanning"
+                .setTaskName("\u001B[32mScanning\u001B[0m")
                 .setInitialMax(totalTests)
                 .setStyle(ProgressBarStyle.ASCII)
                 .setUpdateIntervalMillis(20)
@@ -40,9 +35,6 @@ public class ScanProgress {
         completed++;
     }
 
-    /**
-     * FR-9: Update vulnerability count in real-time
-     */
     public void updateVulnerabilityCount(int count) {
         this.vulnerabilitiesFound = count;
         updateMessage();

@@ -1,7 +1,6 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
-import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
@@ -43,8 +42,7 @@ public class CommandInjectionTest extends BaseVulnerabilityTest {
     }
 
     @Override
-    protected void runTests(ScanContext context) throws Exception {
-        // Test URL parameters
+    protected void runTests(ScanContext context) {
         for (String url : context.getCrawler().getUrlsWithParams()) {
             Map<String, String> params = extractParams(url);
             for (String paramName : params.keySet()) {
@@ -64,7 +62,6 @@ public class CommandInjectionTest extends BaseVulnerabilityTest {
                     if (response.isSuccessful()) {
                         String body = response.body() != null ? response.body().string() : "";
 
-                        // Check for command output indicators
                         if (containsCommandOutputIndicators(body)) {
                             addVulnerability(createVulnerability(
                                     Severity.CRITICAL,
@@ -76,7 +73,6 @@ public class CommandInjectionTest extends BaseVulnerabilityTest {
                             break;
                         }
 
-                        // Check for time-based injection (sleep commands)
                         if (payload.contains("sleep") && duration > 4500) {
                             addVulnerability(createVulnerability(
                                     Severity.CRITICAL,

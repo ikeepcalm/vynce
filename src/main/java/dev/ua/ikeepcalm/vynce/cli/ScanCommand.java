@@ -2,9 +2,9 @@ package dev.ua.ikeepcalm.vynce.cli;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanConfig;
 import dev.ua.ikeepcalm.vynce.core.model.ScanResult;
-import dev.ua.ikeepcalm.vynce.core.service.Scanner;
 import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
+import dev.ua.ikeepcalm.vynce.core.service.Scanner;
 import dev.ua.ikeepcalm.vynce.report.ReportFactory;
 import dev.ua.ikeepcalm.vynce.report.ReportGenerator;
 import dev.ua.ikeepcalm.vynce.report.ReportManager;
@@ -36,78 +36,62 @@ import java.util.concurrent.Callable;
 )
 public class ScanCommand implements Callable<Integer> {
 
+    @Option(names = {"-x", "--exclude"},
+            description = "Tests to exclude",
+            split = ",",
+            paramLabel = "<TEST>")
+    private final List<TestType> excludeTestTypes = new ArrayList<>();
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
     @Parameters(index = "0",
             description = "Target URL to scan",
             paramLabel = "<URL>")
     private String targetUrl;
-
     @Option(names = {"-t", "--tests"},
             description = "Tests to run: ${COMPLETION-CANDIDATES} (default: all)",
             split = ",",
             paramLabel = "<TEST>")
     private List<TestType> testTypes;
-
-    @Option(names = {"-x", "--exclude"},
-            description = "Tests to exclude",
-            split = ",",
-            paramLabel = "<TEST>")
-    private List<TestType> excludeTestTypes = new ArrayList<>();
-
     @Option(names = {"--threads"},
             description = "Number of threads (1-10, default: 5)",
             defaultValue = "5",
             paramLabel = "<N>")
     private int threads;
-
     @Option(names = {"-d", "--depth"},
             description = "Crawl depth (default: 3)",
             defaultValue = "3",
             paramLabel = "<N>")
     private int depth;
-
     @Option(names = {"-o", "--output"},
             description = "Output file",
             paramLabel = "<FILE>")
     private String outputFile;
-
     @Option(names = {"-f", "--format"},
             description = "Output format: ${COMPLETION-CANDIDATES}",
             defaultValue = "JSON")
     private OutputFormat format;
-
     @Option(names = {"--timeout"},
             description = "Request timeout in seconds",
             defaultValue = "30")
     private int timeout;
-
     @Option(names = {"--follow-redirects"},
             description = "Follow HTTP redirects",
             defaultValue = "true")
     private boolean followRedirects;
-
     @Option(names = {"--user-agent"},
             description = "Custom User-Agent",
             defaultValue = "Vynce Scanner/1.0")
     private String userAgent;
-
     @Option(names = {"--delay"},
             description = "Delay between requests in milliseconds (default: 0)",
             defaultValue = "0",
             paramLabel = "<MS>")
     private int requestDelay;
-
-    @CommandLine.Spec
-    CommandLine.Model.CommandSpec spec;
-
     @CommandLine.ParentCommand
     private MainCommand parent;
 
-    public enum OutputFormat {
-        JSON, HTML, MARKDOWN
-    }
-
     @Override
-    public Integer call() throws Exception {
+    public Integer call() {
         if (parent != null && parent.verbose) {
             ConsoleUI.setVerbose(true);
         }
@@ -133,7 +117,6 @@ public class ScanCommand implements Callable<Integer> {
 
         displayConfiguration();
 
-        // Build scan configuration
         ScanConfig config = ScanConfig.builder()
                 .threads(threads)
                 .crawlDepth(depth)
@@ -143,7 +126,6 @@ public class ScanCommand implements Callable<Integer> {
                 .requestDelay(requestDelay)
                 .build();
 
-        // Setup graceful shutdown
         ScanProgress progress = new ScanProgress(testTypes.size());
         Scanner scanner = new Scanner(targetUrl, testTypes, config);
 
@@ -151,19 +133,15 @@ public class ScanCommand implements Callable<Integer> {
 
         ScanResult result = scanner.scanWithProgress(progress);
 
-        // Remove shutdown hook after successful completion
         try {
             Runtime.getRuntime().removeShutdownHook(shutdownHook);
         } catch (IllegalStateException ignored) {
-            // Hook already running or JVM shutting down
         }
 
         displayResults(result);
 
-        // Always save to managed reports directory
         saveToReportsDirectory(result);
 
-        // Additionally export to custom file if specified
         if (outputFile != null) {
             exportToCustomFile(result);
         }
@@ -244,9 +222,9 @@ public class ScanCommand implements Callable<Integer> {
         } else {
             for (Vulnerability vuln : result.getVulnerabilities()) {
                 ConsoleUI.vulnerability(
-                        vuln.getType(),
-                        vuln.getSeverity(),
-                        vuln.getDescription()
+                        vuln.type(),
+                        vuln.severity(),
+                        vuln.description()
                 );
             }
 
@@ -259,9 +237,7 @@ public class ScanCommand implements Callable<Integer> {
         }
     }
 
-    /**
-     * Save scan results to the managed reports directory (~/.vynce/reports)
-     */
+
     private void saveToReportsDirectory(ScanResult result) {
         try {
             ReportManager manager = new ReportManager();
@@ -270,9 +246,7 @@ public class ScanCommand implements Callable<Integer> {
             if (reportId != null) {
                 ConsoleUI.success("Report saved with ID: " + reportId);
 
-                // If format is not JSON, also save the formatted version to exports directory
                 if (format != OutputFormat.JSON) {
-                    String formatName = format.name();
                     ReportFactory.ReportFormat reportFormat = switch (format) {
                         case HTML -> ReportFactory.ReportFormat.HTML;
                         case MARKDOWN -> ReportFactory.ReportFormat.MARKDOWN;
@@ -282,12 +256,20 @@ public class ScanCommand implements Callable<Integer> {
                     ReportGenerator generator = ReportFactory.getGenerator(reportFormat);
                     String reportContent = generator.generate(result);
 
-                    // Save formatted version to exports directory
-                    Path formattedReport = manager.getExportsDirectory()
-                        .resolve(reportId + "." + generator.getFileExtension());
-                    Files.writeString(formattedReport, reportContent);
+                    Path formattedReport = null;
 
-                    ConsoleUI.info("Formatted report saved to exports: " + formattedReport.getFileName());
+                    if (manager.getExportsDirectory() != null) {
+                        formattedReport = manager.getExportsDirectory()
+                                .resolve(reportId + "." + generator.getFileExtension());
+                    }
+
+                    if (formattedReport != null) {
+                        Files.writeString(formattedReport, reportContent);
+                    }
+
+                    if (formattedReport != null) {
+                        ConsoleUI.info("Formatted report saved to exports: " + formattedReport.getFileName());
+                    }
                 }
 
                 ConsoleUI.info("View it with: vynce report view " + reportId);
@@ -297,14 +279,12 @@ public class ScanCommand implements Callable<Integer> {
         }
     }
 
-    /**
-     * Export scan results to a custom file in the specified format
-     */
+
     private void exportToCustomFile(ScanResult result) {
         try {
             ConsoleUI.info("Exporting " + format.name() + " report to custom file...");
 
-            // Map OutputFormat to ReportFactory.ReportFormat
+
             ReportFactory.ReportFormat reportFormat = switch (format) {
                 case JSON -> ReportFactory.ReportFormat.JSON;
                 case HTML -> ReportFactory.ReportFormat.HTML;
@@ -314,13 +294,13 @@ public class ScanCommand implements Callable<Integer> {
             ReportGenerator generator = ReportFactory.getGenerator(reportFormat);
             String reportContent = generator.generate(result);
 
-            // Determine output file name
+
             String fileName = outputFile;
             if (!fileName.contains(".")) {
                 fileName += "." + generator.getFileExtension();
             }
 
-            // Write report to file
+
             Path outputPath = Path.of(fileName);
             Files.writeString(outputPath, reportContent);
 
@@ -328,5 +308,9 @@ public class ScanCommand implements Callable<Integer> {
         } catch (IOException e) {
             ConsoleUI.error("Failed to export report: " + e.getMessage());
         }
+    }
+
+    public enum OutputFormat {
+        JSON, HTML, MARKDOWN
     }
 }
