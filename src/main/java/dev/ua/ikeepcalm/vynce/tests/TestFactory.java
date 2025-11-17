@@ -25,7 +25,6 @@ public class TestFactory {
         builtInRegistry.put(TestType.PATH_TRAVERSAL, PathTraversalTest.class);
         builtInRegistry.put(TestType.COMMAND_INJECTION, CommandInjectionTest.class);
         builtInRegistry.put(TestType.LDAP, LdapInjectionTest.class);
-        builtInRegistry.put(TestType.XPATH, XpathInjectionTest.class);
         builtInRegistry.put(TestType.CORS, CorsTest.class);
         builtInRegistry.put(TestType.OPEN_REDIRECT, OpenRedirectTest.class);
     }

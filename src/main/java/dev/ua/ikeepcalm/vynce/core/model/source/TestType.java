@@ -12,7 +12,6 @@ public enum TestType {
     PATH_TRAVERSAL("Path Traversal"),
     COMMAND_INJECTION("Command Injection"),
     LDAP("LDAP Injection"),
-    XPATH("XPath Injection"),
     HEADERS("Security Headers"),
     CORS("CORS Misconfiguration"),
     OPEN_REDIRECT("Open Redirect");

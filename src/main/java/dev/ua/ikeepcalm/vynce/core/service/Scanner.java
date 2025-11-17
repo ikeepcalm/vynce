@@ -58,7 +58,7 @@ public class Scanner {
         }
 
         // Initialize crawler first
-        ConsoleUI.info("Initializing web crawler...");
+        ConsoleUI.debug("Initializing web crawler...");
         context.initializeCrawler();
 
         // NFR-4: Start intermediate results saver

@@ -108,10 +108,11 @@ public class ScanCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        // Set verbose mode from parent command
         if (parent != null && parent.verbose) {
             ConsoleUI.setVerbose(true);
         }
+
+        ConsoleUI.showBanner();
 
         ConsoleUI.printSection("VULNERABILITY SCAN");
 
@@ -131,8 +132,6 @@ public class ScanCommand implements Callable<Integer> {
         testTypes.removeAll(excludeTestTypes);
 
         displayConfiguration();
-
-        ConsoleUI.success("Target is accessible. Starting scan...");
 
         // Build scan configuration
         ScanConfig config = ScanConfig.builder()
@@ -189,6 +188,7 @@ public class ScanCommand implements Callable<Integer> {
         System.out.println("  Timeout:         " + timeout + "s");
         System.out.println("  Request Delay:   " + requestDelay + "ms");
         System.out.println("  User-Agent:      " + userAgent);
+        System.out.println();
     }
 
     private void setupShutdownHook(Scanner scanner, ScanProgress progress) {

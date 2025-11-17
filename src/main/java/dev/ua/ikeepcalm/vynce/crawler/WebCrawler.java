@@ -36,9 +36,9 @@ public class WebCrawler {
     }
 
     public void crawl() {
-        ConsoleUI.info("Starting web crawl from: " + baseUrl);
+        ConsoleUI.debug("Starting web crawl from: " + baseUrl);
         crawlRecursive(baseUrl, 0);
-        ConsoleUI.success("Crawl complete. Found " + discoveredUrls.size() + " URLs and " + discoveredForms.size() + " forms");
+        ConsoleUI.debug("Crawl complete. Found " + discoveredUrls.size() + " URLs and " + discoveredForms.size() + " forms");
     }
 
     private void crawlRecursive(String url, int depth) {
