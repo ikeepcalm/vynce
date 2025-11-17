@@ -20,14 +20,17 @@ import java.util.stream.Stream;
 /**
  * Manages saved scan reports in the user's home directory.
  * Reports are stored in ~/.vynce/reports/ with metadata.
+ * Formatted exports are stored in ~/.vynce/exports/
  */
 public class ReportManager {
 
     private static final String VYNCE_DIR = ".vynce";
     private static final String REPORTS_DIR = "reports";
+    private static final String EXPORTS_DIR = "exports";
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     private final Path reportsDirectory;
+    private final Path exportsDirectory;
     private final ObjectMapper objectMapper;
 
     public ReportManager() {
@@ -35,6 +38,7 @@ public class ReportManager {
         this.objectMapper.registerModule(new JavaTimeModule());
         this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         this.reportsDirectory = initializeReportsDirectory();
+        this.exportsDirectory = initializeExportsDirectory();
     }
 
     /**
@@ -53,6 +57,26 @@ public class ReportManager {
             return reportsDir;
         } catch (IOException e) {
             ConsoleUI.error("Failed to create reports directory: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Initialize the exports directory in user home
+     */
+    private Path initializeExportsDirectory() {
+        try {
+            Path vynceDir = Paths.get(System.getProperty("user.home"), VYNCE_DIR);
+            Path exportsDir = vynceDir.resolve(EXPORTS_DIR);
+
+            if (!Files.exists(exportsDir)) {
+                Files.createDirectories(exportsDir);
+                ConsoleUI.debug("Created exports directory: " + exportsDir);
+            }
+
+            return exportsDir;
+        } catch (IOException e) {
+            ConsoleUI.error("Failed to create exports directory: " + e.getMessage());
             return null;
         }
     }
@@ -247,6 +271,13 @@ public class ReportManager {
      */
     public Path getReportsDirectory() {
         return reportsDirectory;
+    }
+
+    /**
+     * Get the exports directory path
+     */
+    public Path getExportsDirectory() {
+        return exportsDirectory;
     }
 
     /**

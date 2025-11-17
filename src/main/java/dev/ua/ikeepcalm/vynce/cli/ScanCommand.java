@@ -270,7 +270,7 @@ public class ScanCommand implements Callable<Integer> {
             if (reportId != null) {
                 ConsoleUI.success("Report saved with ID: " + reportId);
 
-                // If format is not JSON, also save the formatted version
+                // If format is not JSON, also save the formatted version to exports directory
                 if (format != OutputFormat.JSON) {
                     String formatName = format.name();
                     ReportFactory.ReportFormat reportFormat = switch (format) {
@@ -282,12 +282,12 @@ public class ScanCommand implements Callable<Integer> {
                     ReportGenerator generator = ReportFactory.getGenerator(reportFormat);
                     String reportContent = generator.generate(result);
 
-                    // Save formatted version alongside JSON
-                    Path formattedReport = manager.getReportsDirectory()
+                    // Save formatted version to exports directory
+                    Path formattedReport = manager.getExportsDirectory()
                         .resolve(reportId + "." + generator.getFileExtension());
                     Files.writeString(formattedReport, reportContent);
 
-                    ConsoleUI.info("Also saved as " + formatName + " format");
+                    ConsoleUI.info("Formatted report saved to exports: " + formattedReport.getFileName());
                 }
 
                 ConsoleUI.info("View it with: vynce report view " + reportId);
