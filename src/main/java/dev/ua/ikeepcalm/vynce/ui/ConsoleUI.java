@@ -60,10 +60,12 @@ public class ConsoleUI {
             default -> GREEN;
         };
 
+        int limit = 80;
+        String display = message == null ? "" : (message.length() > limit ? message.substring(0, limit) + "...." : message);
         System.out.println(ansi()
                 .fg(color).a("[" + severity + "] ")
                 .fg(WHITE).a(type + ": ")
-                .reset().a(message));
+                .reset().a(display));
     }
 
     public static void printSection(String title) {

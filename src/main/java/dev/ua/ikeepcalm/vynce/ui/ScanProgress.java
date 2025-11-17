@@ -3,9 +3,8 @@ package dev.ua.ikeepcalm.vynce.ui;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
-import me.tongfei.progressbar.ConsoleProgressBarConsumer;
 
-import static org.fusesource.jansi.Ansi.Color;
+import java.time.temporal.ChronoUnit;
 
 public class ScanProgress {
 
@@ -25,10 +24,11 @@ public class ScanProgress {
      */
     public void start() {
         this.progressBar = new ProgressBarBuilder()
-                .setTaskName("Scanning")
+                .setTaskName("\u001B[32mScanning\u001B[0m") // Green "Scanning"
                 .setInitialMax(totalTests)
                 .setStyle(ProgressBarStyle.ASCII)
                 .setUpdateIntervalMillis(20)
+                .hideEta()
                 .showSpeed()
                 .build();
     }
@@ -49,13 +49,8 @@ public class ScanProgress {
     }
 
     private void updateMessage() {
-        int percentage = (int) ((completed * 100.0) / totalTests);
-
-        // Add colors to the message using ANSI codes
-        String coloredMessage = String.format(" \u001B[36m%s\u001B[0m | \u001B[33m%d%%\u001B[0m | Found: \u001B[32m%d\u001B[0m",
-                currentTestName, percentage, vulnerabilitiesFound);
-
-        progressBar.setExtraMessage(coloredMessage);
+        String message = String.format(" %s | Found: %d", currentTestName, vulnerabilitiesFound);
+        progressBar.setExtraMessage(message);
     }
 
     public void complete() {
