@@ -27,6 +27,7 @@ public class Scanner {
     private volatile boolean stopping = false;
     private ExecutorService executor;
     private IntermediateResultsSaver resultsSaver;
+    private ScanResult currentResult;
 
     public Scanner(String targetUrl, List<TestType> testTypes, int threads) {
         this(targetUrl, testTypes, ScanConfig.builder().threads(threads).build());
@@ -46,8 +47,23 @@ public class Scanner {
         }
     }
 
+    /**
+     * Get the current scan results (useful for partial results when scan is interrupted).
+     * @return The current ScanResult, or null if scan hasn't started
+     */
+    public ScanResult getPartialResults() {
+        if (currentResult != null) {
+            // Set duration up to current point
+            currentResult.setDuration(System.currentTimeMillis() -
+                (currentResult.getDuration() == 0 ? System.currentTimeMillis() :
+                 System.currentTimeMillis() - currentResult.getDuration()));
+        }
+        return currentResult;
+    }
+
     public ScanResult scanWithProgress(ScanProgress progress) {
         ScanResult result = new ScanResult();
+        this.currentResult = result; // Store reference for partial results
         long startTime = System.currentTimeMillis();
 
         if (stopping) {

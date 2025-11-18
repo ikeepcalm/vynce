@@ -3,6 +3,7 @@ package dev.ua.ikeepcalm.vynce.tests.impl;
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
+import dev.ua.ikeepcalm.vynce.crawler.WebCrawler;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
 import okhttp3.Response;
 
@@ -40,7 +41,11 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
 
     @Override
     protected void runTests(ScanContext context) {
-        for (String url : context.getCrawler().getUrlsWithParams()) {
+        for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
+            if (WebCrawler.isStaticResource(url, true)) {
+                continue;
+            }
+
             Map<String, String> params = extractParams(url);
             for (String paramName : params.keySet()) {
                 if (isRedirectParameter(paramName)) {
@@ -49,7 +54,11 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
             }
         }
 
-        for (String url : context.getCrawler().getAllUrls()) {
+        for (String url : context.getCrawler().getUniquePatternUrls()) {
+            if (WebCrawler.isStaticResource(url, true)) {
+                continue;
+            }
+
             for (String redirectParam : REDIRECT_PARAMS) {
                 testOpenRedirectParameter(context, url, redirectParam);
             }

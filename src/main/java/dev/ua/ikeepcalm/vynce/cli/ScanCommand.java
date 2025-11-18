@@ -181,7 +181,31 @@ public class ScanCommand implements Callable<Integer> {
             scanner.stop();
             progress.complete();
             ConsoleUI.warning("Scan interrupted by user. Cleaning up...");
-            ConsoleUI.info("Scan stopped. Partial results may be available.");
+
+            ScanResult partialResult = scanner.getPartialResults();
+
+            if (partialResult != null && !partialResult.getVulnerabilities().isEmpty()) {
+                ConsoleUI.info("Generating report from partial results...");
+
+                displayResults(partialResult);
+
+                try {
+                    saveToReportsDirectory(partialResult);
+                    ConsoleUI.success("Partial results have been saved.");
+                } catch (Exception e) {
+                    ConsoleUI.error("Failed to save partial results: " + e.getMessage());
+                }
+
+                if (outputFile != null) {
+                    try {
+                        exportToCustomFile(partialResult);
+                    } catch (Exception e) {
+                        ConsoleUI.error("Failed to export partial results: " + e.getMessage());
+                    }
+                }
+            } else {
+                ConsoleUI.info("No vulnerabilities found before interruption.");
+            }
         });
         Runtime.getRuntime().addShutdownHook(shutdownHook);
         return shutdownHook;

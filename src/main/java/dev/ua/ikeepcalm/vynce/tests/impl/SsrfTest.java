@@ -4,6 +4,7 @@ import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.crawler.FormData;
+import dev.ua.ikeepcalm.vynce.crawler.WebCrawler;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
 import okhttp3.Response;
 
@@ -33,7 +34,11 @@ public class SsrfTest extends BaseVulnerabilityTest {
 
     @Override
     protected void runTests(ScanContext context) {
-        for (String url : context.getCrawler().getUrlsWithParams()) {
+        for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
+            if (WebCrawler.isStaticResource(url, false)) {
+                continue;
+            }
+
             Map<String, String> params = extractParams(url);
             for (String paramName : params.keySet()) {
                 testSsrfInParameter(context, url, paramName);
@@ -65,7 +70,7 @@ public class SsrfTest extends BaseVulnerabilityTest {
                         }
                     }
                 }
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
     }
@@ -99,14 +104,13 @@ public class SsrfTest extends BaseVulnerabilityTest {
                             break;
                         }
                     }
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
             }
         }
     }
 
     private boolean containsSsrfIndicators(String body, String payload) {
-
         if (payload.contains("169.254.169.254") && body.contains("ami-id")) {
             return true;
         }

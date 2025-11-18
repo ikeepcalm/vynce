@@ -3,6 +3,7 @@ package dev.ua.ikeepcalm.vynce.tests.impl;
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
+import dev.ua.ikeepcalm.vynce.crawler.WebCrawler;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
 import okhttp3.Response;
 
@@ -41,7 +42,11 @@ public class LdapInjectionTest extends BaseVulnerabilityTest {
 
     @Override
     protected void runTests(ScanContext context) {
-        for (String url : context.getCrawler().getUrlsWithParams()) {
+        for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
+            if (WebCrawler.isStaticResource(url, true)) {
+                continue;
+            }
+
             Map<String, String> params = extractParams(url);
             for (String paramName : params.keySet()) {
                 testLdapInjection(context, url, paramName);

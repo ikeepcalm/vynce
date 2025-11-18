@@ -11,6 +11,7 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,21 +28,102 @@ public class WebCrawler {
     private final VynceHttpClient httpClient;
     private final int maxDepth;
     private final Set<String> visitedUrls;
+    private final Set<String> visitedPatterns;
     private final Set<String> discoveredUrls;
     private final List<FormData> discoveredForms;
     private final Map<String, List<String>> urlParameters;
 
     private int spinnerIndex = 0;
     private long lastUpdateTime = 0;
+    private int skippedStaticResources = 0;
 
     public WebCrawler(String baseUrl, VynceHttpClient httpClient, int maxDepth) {
         this.baseUrl = normalizeUrl(baseUrl);
         this.httpClient = httpClient;
         this.maxDepth = maxDepth;
         this.visitedUrls = ConcurrentHashMap.newKeySet();
+        this.visitedPatterns = ConcurrentHashMap.newKeySet();
         this.discoveredUrls = ConcurrentHashMap.newKeySet();
         this.discoveredForms = Collections.synchronizedList(new ArrayList<>());
         this.urlParameters = new ConcurrentHashMap<>();
+    }
+
+    public static boolean isStaticResource(String url, boolean checkPaths) {
+        try {
+
+            String path = java.net.URLDecoder.decode(url, StandardCharsets.UTF_8).toLowerCase();
+            int queryIndex = path.indexOf('?');
+            if (queryIndex > 0) {
+                path = path.substring(0, queryIndex);
+            }
+
+            path = path.trim().replaceAll("[\\s\\p{Cntrl}]+$", "");
+
+            if (checkPaths) {
+                String[] staticPaths = {
+                        "/wp-content/uploads/",     // WordPress uploads
+                        "/wp-content/themes/",      // WordPress themes
+                        "/wp-includes/",            // WordPress core files
+                        "/uploads/",                // Generic uploads
+                        "/static/",                 // Static assets
+                        "/assets/",                 // Asset files
+                        "/media/",                  // Media files
+                        "/css/",                    // Stylesheets
+                        "/js/",                     // JavaScript
+                        "/fonts/",                  // Font files
+                        "/icons/",                  // Icon files
+                        "/thumbs/",                 // Thumbnails
+                        "/thumbnails/",             // Thumbnails
+                        "/temp/",                   // Temporary files
+                        "/tmp/",                    // Temporary files
+                        "/cache/",                  // Cache files
+                        "/_next/static/",           // Next.js static
+                        "/dist/",                   // Distribution files
+                        "/build/"                   // Build artifacts
+                };
+
+                for (String staticPath : staticPaths) {
+                    if (path.contains(staticPath)) {
+                        return true;
+                    }
+                }
+            }
+
+            String[] staticExtensions = {
+                    // Documents
+                    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp",
+                    ".txt", ".rtf", ".csv",
+
+                    // Images
+                    ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".ico", ".webp", ".tiff", ".tif",
+
+                    // Media
+                    ".mp3", ".mp4", ".avi", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".mkv",
+                    ".wav", ".ogg", ".m4a", ".aac",
+
+                    // Archives
+                    ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".iso",
+
+                    // Code/Assets (usually static)
+                    ".css", ".js", ".woff", ".woff2", ".ttf", ".eot", ".otf",
+
+                    // Executables
+                    ".exe", ".dll", ".so", ".dylib", ".app", ".dmg", ".pkg", ".deb", ".rpm",
+
+                    // Data formats
+                    ".json", ".xml", ".yaml", ".yml", ".toml"
+            };
+
+            for (String ext : staticExtensions) {
+                if (path.endsWith(ext)) {
+                    return true;
+                }
+            }
+
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public void crawl() {
@@ -57,9 +139,26 @@ public class WebCrawler {
             clearCrawlStatus();
         }
 
-        ConsoleUI.debug("Crawl complete. Found " + discoveredUrls.size() + " URLs and " + discoveredForms.size() + " forms");
-    }
+        int totalUrls = discoveredUrls.size();
+        int uniquePatterns = visitedPatterns.size();
+        int urlsSaved = totalUrls - uniquePatterns;
 
+        StringBuilder summary = new StringBuilder();
+        summary.append("Crawl complete. Found ").append(totalUrls).append(" URLs");
+
+        if (uniquePatterns > 0 && urlsSaved > 0) {
+            summary.append(" (").append(uniquePatterns)
+                    .append(" unique patterns, skipped ").append(urlsSaved).append(" duplicates)");
+        }
+
+        if (skippedStaticResources > 0) {
+            summary.append(", skipped ").append(skippedStaticResources).append(" static resources");
+        }
+
+        summary.append(", ").append(discoveredForms.size()).append(" forms");
+
+        ConsoleUI.debug(summary.toString());
+    }
 
     private void updateCrawlStatus() {
         long currentTime = System.currentTimeMillis();
@@ -89,7 +188,7 @@ public class WebCrawler {
     }
 
     private void crawlRecursive(String url, int depth) {
-        if (depth > maxDepth || visitedUrls.contains(url)) {
+        if (depth > maxDepth) {
             return;
         }
 
@@ -98,8 +197,27 @@ public class WebCrawler {
             return;
         }
 
+        if (isStaticResource(url, true)) {
+            skippedStaticResources++;
+            ConsoleUI.debug("Skipping static resource: " + url);
+            return;
+        }
+
+        String pattern = UrlPatternNormalizer.getPatternKey(url);
+
+        boolean isNewUrl = discoveredUrls.add(url);
+
+        if (visitedUrls.contains(url)) {
+            return;
+        }
+
+        if (visitedPatterns.contains(pattern)) {
+            ConsoleUI.debug("Skipping similar pattern (already crawled): " + url + " -> " + pattern);
+            return;
+        }
+
         visitedUrls.add(url);
-        discoveredUrls.add(url);
+        visitedPatterns.add(pattern);
 
         try {
             ConsoleUI.debug("Crawling: " + url + " (depth: " + depth + ")");
@@ -142,8 +260,22 @@ public class WebCrawler {
             String href = link.absUrl("href");
             if (!href.isEmpty() && isSameDomain(href)) {
                 String cleanUrl = removeFragment(href);
+
+                if (isStaticResource(cleanUrl, true)) {
+                    skippedStaticResources++;
+                    ConsoleUI.debug("Skipping static resource in links: " + cleanUrl);
+                    continue;
+                }
+
+                discoveredUrls.add(cleanUrl);
+
                 if (!visitedUrls.contains(cleanUrl)) {
-                    crawlRecursive(cleanUrl, currentDepth + 1);
+                    String pattern = UrlPatternNormalizer.getPatternKey(cleanUrl);
+                    if (!visitedPatterns.contains(pattern)) {
+                        crawlRecursive(cleanUrl, currentDepth + 1);
+                    } else {
+                        ConsoleUI.debug("Skipping similar pattern in links: " + cleanUrl + " -> " + pattern);
+                    }
                 }
             }
         }
@@ -249,5 +381,28 @@ public class WebCrawler {
 
     public List<String> getAllUrls() {
         return new ArrayList<>(discoveredUrls);
+    }
+
+
+    public List<String> getUniquePatternUrls() {
+        Map<String, String> patternToRepresentative = new HashMap<>();
+
+        for (String url : discoveredUrls) {
+            String pattern = UrlPatternNormalizer.getPatternKey(url);
+            patternToRepresentative.putIfAbsent(pattern, url);
+        }
+
+        return new ArrayList<>(patternToRepresentative.values());
+    }
+
+    public List<String> getUniquePatternUrlsWithParams() {
+        Map<String, String> patternToRepresentative = new HashMap<>();
+
+        for (String url : getUrlsWithParams()) {
+            String pattern = UrlPatternNormalizer.getPatternKey(url);
+            patternToRepresentative.putIfAbsent(pattern, url);
+        }
+
+        return new ArrayList<>(patternToRepresentative.values());
     }
 }
