@@ -256,6 +256,9 @@ public class ReportManager {
         private int lowCount;
         private long duration;
 
+        public ReportMetadata() {
+        }
+
         public ReportMetadata(String id, String targetUrl, LocalDateTime timestamp,
                               int totalVulnerabilities, int criticalCount, int highCount,
                               int mediumCount, int lowCount, long duration) {
