@@ -1,0 +1,11 @@
+{
+  "token_names": [
+    "csrf",
+    "token",
+    "_token",
+    "csrf_token",
+    "csrftoken",
+    "authenticity_token",
+    "__RequestVerificationToken"
+  ]
+}

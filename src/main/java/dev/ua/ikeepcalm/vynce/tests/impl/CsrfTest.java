@@ -5,13 +5,18 @@ import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
 import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
+import dev.ua.ikeepcalm.vynce.utils.PayloadLoader;
 import okhttp3.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.util.List;
+
 public class CsrfTest extends BaseVulnerabilityTest {
+
+    private List<String> tokenNames;
 
     @Override
     public TestType getTestType() {
@@ -23,8 +28,13 @@ public class CsrfTest extends BaseVulnerabilityTest {
         return 1;
     }
 
+    private void loadPayloads() {
+        tokenNames = PayloadLoader.loadPayloads("csrf.json", "token_names");
+    }
+
     @Override
     protected void runTests(ScanContext context) throws Exception {
+        loadPayloads();
         advanceProgress("Checking forms");
         try (Response response = context.getHttpClient().get(context.getTargetUrl())) {
             String html = context.getHttpClient().getBodyAsString(response);
@@ -51,8 +61,6 @@ public class CsrfTest extends BaseVulnerabilityTest {
     }
 
     private boolean hasCsrfToken(Element form) {
-        String[] tokenNames = {"csrf", "token", "_token", "csrf_token", "csrftoken", "authenticity_token", "__RequestVerificationToken"};
-
         for (String tokenName : tokenNames) {
             Element input = form.selectFirst("input[name*=" + tokenName + "]");
             if (input != null && input.attr("type").equals("hidden")) {

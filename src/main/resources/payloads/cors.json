@@ -1,0 +1,13 @@
+{
+  "test_origins": [
+    "https://evil.com",
+    "http://attacker.com",
+    "null"
+  ],
+  "api_paths": [
+    "/api",
+    "/api/v1",
+    "/graphql",
+    "/rest"
+  ]
+}

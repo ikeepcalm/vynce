@@ -6,26 +6,16 @@ import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.crawler.FormData;
 import dev.ua.ikeepcalm.vynce.crawler.WebCrawler;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
+import dev.ua.ikeepcalm.vynce.utils.PayloadLoader;
 import okhttp3.Response;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public class SsrfTest extends BaseVulnerabilityTest {
 
-    private static final List<String> SSRF_PAYLOADS = Arrays.asList(
-            "http://localhost",
-            "http://127.0.0.1",
-            "http://169.254.169.254/latest/meta-data/",  // AWS metadata
-            "http://metadata.google.internal/computeMetadata/v1/",  // GCP metadata
-            "http://[::1]",
-            "http://0.0.0.0",
-            "http://192.168.1.1",
-            "file:///etc/passwd",
-            "http://internal.company.local"
-    );
+    private List<String> ssrfPayloads;
 
     @Override
     public TestType getTestType() {
@@ -48,8 +38,13 @@ public class SsrfTest extends BaseVulnerabilityTest {
         return count;
     }
 
+    private void loadPayloads() {
+        ssrfPayloads = PayloadLoader.loadPayloads("ssrf.json", "payloads");
+    }
+
     @Override
     protected void runTests(ScanContext context) {
+        loadPayloads();
         for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
             if (WebCrawler.isStaticResource(url, false)) {
                 continue;
@@ -72,7 +67,7 @@ public class SsrfTest extends BaseVulnerabilityTest {
     }
 
     private void testSsrfInParameter(ScanContext context, String url, String paramName) {
-        for (String payload : SSRF_PAYLOADS) {
+        for (String payload : ssrfPayloads) {
             try {
                 String testUrl = injectPayload(url, paramName, encodeUrl(payload));
                 try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {
@@ -97,7 +92,7 @@ public class SsrfTest extends BaseVulnerabilityTest {
     }
 
     private void testSsrfInFormParam(ScanContext context, FormData form, String paramName) {
-        for (String payload : SSRF_PAYLOADS) {
+        for (String payload : ssrfPayloads) {
             try {
                 Map<String, String> modifiedParams = form.parameters();
                 modifiedParams.put(paramName, payload);

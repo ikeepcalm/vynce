@@ -5,36 +5,18 @@ import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.crawler.WebCrawler;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
+import dev.ua.ikeepcalm.vynce.utils.PayloadLoader;
 import okhttp3.Response;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public class PathTraversalTest extends BaseVulnerabilityTest {
 
-    private static final List<String> PATH_TRAVERSAL_PAYLOADS = Arrays.asList(
-            "../../../etc/passwd",
-            "..\\..\\..\\windows\\win.ini",
-            "....//....//....//etc/passwd",
-            "..%2F..%2F..%2Fetc%2Fpasswd",
-            "..%252F..%252F..%252Fetc%252Fpasswd",
-            "..%c0%af..%c0%af..%c0%afetc/passwd",
-            "/etc/passwd",
-            "file:///etc/passwd",
-            "C:\\windows\\win.ini",
-            "../../../../../../etc/passwd",
-            "..\\..\\..\\..\\..\\..\\..\\..\\windows\\win.ini"
-    );
-
-    private static final List<String> UNIX_INDICATORS = Arrays.asList(
-            "root:x:", "daemon:", "bin:", "sys:", "/bin/bash", "/bin/sh"
-    );
-
-    private static final List<String> WINDOWS_INDICATORS = Arrays.asList(
-            "[fonts]", "[extensions]", "for 16-bit app support", "MAPI="
-    );
+    private List<String> pathTraversalPayloads;
+    private List<String> unixIndicators;
+    private List<String> windowsIndicators;
 
     @Override
     public TestType getTestType() {
@@ -54,8 +36,15 @@ public class PathTraversalTest extends BaseVulnerabilityTest {
         return count;
     }
 
+    private void loadPayloads() {
+        pathTraversalPayloads = PayloadLoader.loadPayloads("path-traversal.json", "payloads");
+        unixIndicators = PayloadLoader.loadPayloads("path-traversal.json", "unix_indicators");
+        windowsIndicators = PayloadLoader.loadPayloads("path-traversal.json", "windows_indicators");
+    }
+
     @Override
     protected void runTests(ScanContext context) {
+        loadPayloads();
         for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
             if (WebCrawler.isStaticResource(url, false)) {
                 continue;
@@ -82,7 +71,7 @@ public class PathTraversalTest extends BaseVulnerabilityTest {
     }
 
     private void testPathTraversal(ScanContext context, String url, String paramName) {
-        for (String payload : PATH_TRAVERSAL_PAYLOADS) {
+        for (String payload : pathTraversalPayloads) {
             try {
                 String testUrl = injectPayload(url, paramName, payload);
                 try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {
@@ -108,13 +97,13 @@ public class PathTraversalTest extends BaseVulnerabilityTest {
     }
 
     private boolean containsPathTraversalIndicators(String body) {
-        for (String indicator : UNIX_INDICATORS) {
+        for (String indicator : unixIndicators) {
             if (body.contains(indicator)) {
                 return true;
             }
         }
 
-        for (String indicator : WINDOWS_INDICATORS) {
+        for (String indicator : windowsIndicators) {
             if (body.contains(indicator)) {
                 return true;
             }

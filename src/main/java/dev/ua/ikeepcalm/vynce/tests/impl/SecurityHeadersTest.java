@@ -1,61 +1,23 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
 import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
 public class SecurityHeadersTest extends BaseVulnerabilityTest {
 
-    private static final Map<String, SecurityHeader> REQUIRED_HEADERS = new HashMap<>();
-
-    static {
-        REQUIRED_HEADERS.put("X-Frame-Options", new SecurityHeader(
-                Severity.MEDIUM,
-                "Missing X-Frame-Options header. Recommended: DENY or SAMEORIGIN",
-                "Protects against clickjacking attacks"
-        ));
-
-        REQUIRED_HEADERS.put("X-Content-Type-Options", new SecurityHeader(
-                Severity.MEDIUM,
-                "Missing X-Content-Type-Options header. Recommended: nosniff",
-                "Prevents MIME type sniffing"
-        ));
-
-        REQUIRED_HEADERS.put("X-XSS-Protection", new SecurityHeader(
-                Severity.LOW,
-                "Missing X-XSS-Protection header. Recommended: 1; mode=block",
-                "Legacy XSS protection (deprecated but still useful)"
-        ));
-
-        REQUIRED_HEADERS.put("Strict-Transport-Security", new SecurityHeader(
-                Severity.HIGH,
-                "Missing Strict-Transport-Security header. Recommended: max-age=31536000; includeSubDomains",
-                "Enforces HTTPS connections"
-        ));
-
-        REQUIRED_HEADERS.put("Content-Security-Policy", new SecurityHeader(
-                Severity.MEDIUM,
-                "Missing Content-Security-Policy header",
-                "Prevents XSS and data injection attacks"
-        ));
-
-        REQUIRED_HEADERS.put("Referrer-Policy", new SecurityHeader(
-                Severity.LOW,
-                "Missing Referrer-Policy header. Recommended: no-referrer or strict-origin-when-cross-origin",
-                "Controls referrer information"
-        ));
-
-        REQUIRED_HEADERS.put("Permissions-Policy", new SecurityHeader(
-                Severity.LOW,
-                "Missing Permissions-Policy header",
-                "Controls browser features and APIs"
-        ));
-    }
+    private static final Logger logger = LoggerFactory.getLogger(SecurityHeadersTest.class);
+    private Map<String, SecurityHeader> requiredHeaders;
 
     @Override
     public TestType getTestType() {
@@ -64,18 +26,53 @@ public class SecurityHeadersTest extends BaseVulnerabilityTest {
 
     @Override
     protected int estimateTestSteps(ScanContext context) {
-        int count = REQUIRED_HEADERS.size() + 2;
+        loadPayloads();
+        int count = requiredHeaders.size() + 2;
         if (context.getTargetUrl().startsWith("https://")) {
             count++;
         }
         return count;
     }
 
+    private void loadPayloads() {
+        requiredHeaders = new HashMap<>();
+        ObjectMapper mapper = new ObjectMapper();
+
+        try (InputStream is = getClass().getClassLoader()
+                .getResourceAsStream("payloads/security-headers.json")) {
+
+            if (is == null) {
+                logger.error("Payload file not found: payloads/security-headers.json");
+                return;
+            }
+
+            JsonNode root = mapper.readTree(is);
+            JsonNode headersNode = root.get("required_headers");
+
+            if (headersNode != null && headersNode.isObject()) {
+                headersNode.fields().forEachRemaining(entry -> {
+                    String headerName = entry.getKey();
+                    JsonNode headerData = entry.getValue();
+
+                    Severity severity = Severity.valueOf(headerData.get("severity").asText());
+                    String description = headerData.get("description").asText();
+                    String purpose = headerData.get("purpose").asText();
+
+                    requiredHeaders.put(headerName, new SecurityHeader(severity, description, purpose));
+                });
+            }
+
+        } catch (Exception e) {
+            logger.error("Failed to load security headers: {}", e.getMessage(), e);
+        }
+    }
+
     @Override
     protected void runTests(ScanContext context) throws Exception {
+        loadPayloads();
         try (Response response = context.getHttpClient().get(context.getTargetUrl())) {
 
-            for (Map.Entry<String, SecurityHeader> entry : REQUIRED_HEADERS.entrySet()) {
+            for (Map.Entry<String, SecurityHeader> entry : requiredHeaders.entrySet()) {
                 String headerName = entry.getKey();
                 advanceProgress("Header: " + headerName);
                 String headerValue = response.header(headerName);

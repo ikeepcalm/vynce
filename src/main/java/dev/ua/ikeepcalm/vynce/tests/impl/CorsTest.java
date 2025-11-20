@@ -4,18 +4,17 @@ import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
+import dev.ua.ikeepcalm.vynce.utils.PayloadLoader;
 import okhttp3.Response;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class CorsTest extends BaseVulnerabilityTest {
 
-    private static final String[] TEST_ORIGINS = {
-            "https://evil.com",
-            "http://attacker.com",
-            "null"
-    };
+    private List<String> testOrigins;
+    private List<String> apiPaths;
 
     @Override
     public TestType getTestType() {
@@ -24,16 +23,23 @@ public class CorsTest extends BaseVulnerabilityTest {
 
     @Override
     protected int estimateTestSteps(ScanContext context) {
-        return TEST_ORIGINS.length + 4;
+        loadPayloads();
+        return testOrigins.size() + 4;
+    }
+
+    private void loadPayloads() {
+        testOrigins = PayloadLoader.loadPayloads("cors.json", "test_origins");
+        apiPaths = PayloadLoader.loadPayloads("cors.json", "api_paths");
     }
 
     @Override
     protected void runTests(ScanContext context) {
+        loadPayloads();
         testCorsConfiguration(context);
     }
 
     private void testCorsConfiguration(ScanContext context) {
-        for (String testOrigin : TEST_ORIGINS) {
+        for (String testOrigin : testOrigins) {
             advanceProgress("Origin: " + testOrigin);
             try {
                 Map<String, String> headers = new HashMap<>();
@@ -84,8 +90,6 @@ public class CorsTest extends BaseVulnerabilityTest {
     }
 
     private void checkMissingCorsHeaders(ScanContext context) {
-        String[] apiPaths = {"/api", "/api/v1", "/graphql", "/rest"};
-
         for (String path : apiPaths) {
             advanceProgress("API path: " + path);
             String testUrl = context.getTargetUrl() + path;

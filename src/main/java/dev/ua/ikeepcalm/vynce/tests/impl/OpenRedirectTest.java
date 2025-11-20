@@ -5,34 +5,17 @@ import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.crawler.WebCrawler;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
+import dev.ua.ikeepcalm.vynce.utils.PayloadLoader;
 import okhttp3.Response;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public class OpenRedirectTest extends BaseVulnerabilityTest {
 
-    private static final List<String> REDIRECT_PAYLOADS = Arrays.asList(
-            "https://evil.com",
-            "http://attacker.com",
-            "//evil.com",
-            "//evil.com/",
-            "///evil.com",
-            "////evil.com",
-            "https:evil.com",
-            "//google.com",
-            "javascript:alert(1)",
-            "/\\evil.com",
-            "https://evil.com@target.com"
-    );
-
-    private static final List<String> REDIRECT_PARAMS = Arrays.asList(
-            "url", "redirect", "next", "return", "returnUrl", "return_url",
-            "redirect_uri", "continue", "dest", "destination", "redir",
-            "redirect_url", "checkout_url", "goto", "target"
-    );
+    private List<String> redirectPayloads;
+    private List<String> redirectParams;
 
     @Override
     public TestType getTestType() {
@@ -41,6 +24,7 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
 
     @Override
     protected int estimateTestSteps(ScanContext context) {
+        loadPayloads();
         int count = 0;
 
         for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
@@ -57,15 +41,21 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
 
         for (String url : context.getCrawler().getUniquePatternUrls()) {
             if (!WebCrawler.isStaticResource(url, true)) {
-                count += REDIRECT_PARAMS.size();
+                count += redirectParams.size();
             }
         }
 
         return count;
     }
 
+    private void loadPayloads() {
+        redirectPayloads = PayloadLoader.loadPayloads("open-redirect.json", "payloads");
+        redirectParams = PayloadLoader.loadPayloads("open-redirect.json", "parameters");
+    }
+
     @Override
     protected void runTests(ScanContext context) {
+        loadPayloads();
         for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
             if (WebCrawler.isStaticResource(url, true)) {
                 continue;
@@ -86,7 +76,7 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
                 continue;
             }
 
-            for (String redirectParam : REDIRECT_PARAMS) {
+            for (String redirectParam : redirectParams) {
                 advanceProgress("Testing: " + redirectParam);
                 testOpenRedirectParameter(context, url, redirectParam);
             }
@@ -106,7 +96,7 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
 
     private boolean isRedirectParameter(String paramName) {
         String lowerParam = paramName.toLowerCase();
-        for (String redirectParam : REDIRECT_PARAMS) {
+        for (String redirectParam : redirectParams) {
             if (lowerParam.contains(redirectParam)) {
                 return true;
             }
@@ -115,7 +105,7 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
     }
 
     private void testOpenRedirect(ScanContext context, String url, String paramName) {
-        for (String payload : REDIRECT_PAYLOADS) {
+        for (String payload : redirectPayloads) {
             try {
                 String testUrl = injectPayload(url, paramName, encodeUrl(payload));
                 try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {
@@ -141,7 +131,7 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
     }
 
     private void testOpenRedirectParameter(ScanContext context, String url, String paramName) {
-        for (String payload : REDIRECT_PAYLOADS) {
+        for (String payload : redirectPayloads) {
             try {
                 String testUrl = url + (url.contains("?") ? "&" : "?") + paramName + "=" + encodeUrl(payload);
                 try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {

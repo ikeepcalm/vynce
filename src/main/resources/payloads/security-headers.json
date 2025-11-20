@@ -1,0 +1,39 @@
+{
+  "required_headers": {
+    "X-Frame-Options": {
+      "severity": "MEDIUM",
+      "description": "Missing X-Frame-Options header. Recommended: DENY or SAMEORIGIN",
+      "purpose": "Protects against clickjacking attacks"
+    },
+    "X-Content-Type-Options": {
+      "severity": "MEDIUM",
+      "description": "Missing X-Content-Type-Options header. Recommended: nosniff",
+      "purpose": "Prevents MIME type sniffing"
+    },
+    "X-XSS-Protection": {
+      "severity": "LOW",
+      "description": "Missing X-XSS-Protection header. Recommended: 1; mode=block",
+      "purpose": "Legacy XSS protection (deprecated but still useful)"
+    },
+    "Strict-Transport-Security": {
+      "severity": "HIGH",
+      "description": "Missing Strict-Transport-Security header. Recommended: max-age=31536000; includeSubDomains",
+      "purpose": "Enforces HTTPS connections"
+    },
+    "Content-Security-Policy": {
+      "severity": "MEDIUM",
+      "description": "Missing Content-Security-Policy header",
+      "purpose": "Prevents XSS and data injection attacks"
+    },
+    "Referrer-Policy": {
+      "severity": "LOW",
+      "description": "Missing Referrer-Policy header. Recommended: no-referrer or strict-origin-when-cross-origin",
+      "purpose": "Controls referrer information"
+    },
+    "Permissions-Policy": {
+      "severity": "LOW",
+      "description": "Missing Permissions-Policy header",
+      "purpose": "Controls browser features and APIs"
+    }
+  }
+}
