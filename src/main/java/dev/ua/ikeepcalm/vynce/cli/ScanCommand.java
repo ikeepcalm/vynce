@@ -218,7 +218,9 @@ public class ScanCommand implements Callable<Integer> {
     }
 
     private boolean checkConnectivity() {
-        try (HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build()) {
+        try (HttpClient client = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build()) {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(new URI(targetUrl))
@@ -232,9 +234,29 @@ public class ScanCommand implements Callable<Integer> {
             ConsoleUI.success("Target responded with status: " + response.statusCode());
             return true;
         } catch (Exception e) {
-            ConsoleUI.error("Failed to connect: " + e.getMessage());
-            ConsoleUI.warning("Please check if the target is accessible");
-            return false;
+            ConsoleUI.debug("HTTP/2 connection failed, trying HTTP/1.1: " + e.getMessage());
+
+            try (HttpClient client = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .followRedirects(HttpClient.Redirect.NORMAL)
+                    .build()) {
+
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(new URI(targetUrl))
+                        .header("User-Agent", userAgent)
+                        .timeout(java.time.Duration.ofSeconds(5))
+                        .build();
+
+                HttpResponse<String> response = client.send(request,
+                        HttpResponse.BodyHandlers.ofString());
+
+                ConsoleUI.success("Target responded with status: " + response.statusCode() + " (HTTP/1.1)");
+                return true;
+            } catch (Exception e2) {
+                ConsoleUI.error("Failed to connect: " + e2.getMessage());
+                ConsoleUI.warning("Please check if the target is accessible");
+                return false;
+            }
         }
     }
 
