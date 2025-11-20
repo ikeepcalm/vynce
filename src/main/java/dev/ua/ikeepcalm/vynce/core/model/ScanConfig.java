@@ -31,6 +31,9 @@ public class ScanConfig {
     @Builder.Default
     private int maxRetries = 2;
 
+    @Builder.Default
+    private boolean verbose = false;
+
     private String username;
     private String password;
     private String apiKey;

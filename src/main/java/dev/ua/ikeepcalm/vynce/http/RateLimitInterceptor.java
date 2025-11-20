@@ -1,5 +1,6 @@
 package dev.ua.ikeepcalm.vynce.http;
 
+import lombok.Getter;
 import okhttp3.Interceptor;
 import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +14,9 @@ public class RateLimitInterceptor implements Interceptor {
     private static final Logger logger = LoggerFactory.getLogger(RateLimitInterceptor.class);
     private final int delayMs;
 
+    @Getter
+    private int rpsMetric;
+
     public RateLimitInterceptor(int delayMs) {
         this.delayMs = delayMs;
     }
@@ -20,13 +24,18 @@ public class RateLimitInterceptor implements Interceptor {
     @NotNull
     @Override
     public Response intercept(@NotNull Chain chain) throws IOException {
-        try {
-            Thread.sleep(delayMs);
-        } catch (InterruptedException e) {
-            logger.warn("Rate limiting interrupted", e);
-            Thread.currentThread().interrupt();
+        rpsMetric++;
+
+        if (delayMs > 0) {
+            try {
+                Thread.sleep(delayMs);
+            } catch (InterruptedException e) {
+                logger.warn("Rate limiting interrupted", e);
+                Thread.currentThread().interrupt();
+            }
         }
 
         return chain.proceed(chain.request());
     }
+
 }

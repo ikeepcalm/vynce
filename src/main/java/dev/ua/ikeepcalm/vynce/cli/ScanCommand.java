@@ -124,6 +124,7 @@ public class ScanCommand implements Callable<Integer> {
                 .followRedirects(followRedirects)
                 .userAgent(userAgent)
                 .requestDelay(requestDelay)
+                .verbose(parent != null && parent.verbose)
                 .build();
 
         ScanProgress progress = new ScanProgress(testTypes.size());
@@ -139,6 +140,11 @@ public class ScanCommand implements Callable<Integer> {
         }
 
         displayResults(result);
+
+        if (parent.verbose) {
+            long rps = scanner.getContext().getHttpClient().getRpsMetric() / (result.getDuration() / 1000);
+            ConsoleUI.debug("RPS: " + rps);
+        }
 
         saveToReportsDirectory(result);
 

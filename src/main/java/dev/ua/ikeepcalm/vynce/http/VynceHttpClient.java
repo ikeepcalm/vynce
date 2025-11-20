@@ -9,11 +9,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class VynceHttpClient {
+
     private final OkHttpClient client;
     private final CookieJar cookieJar;
+    private final RateLimitInterceptor rateLimitInterceptor;
 
     public VynceHttpClient(ScanConfig config) {
         this.cookieJar = CookieJar.NO_COOKIES;
+        this.rateLimitInterceptor = new RateLimitInterceptor(config.getRequestDelay());
 
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .connectTimeout(config.getTimeout(), TimeUnit.SECONDS)
@@ -24,8 +27,8 @@ public class VynceHttpClient {
                 .cookieJar(cookieJar)
                 .addInterceptor(new UserAgentInterceptor(config.getUserAgent()));
 
-        if (config.getRequestDelay() > 0) {
-            builder.addInterceptor(new RateLimitInterceptor(config.getRequestDelay()));
+        if (config.getRequestDelay() > 0 || config.isVerbose()) {
+            builder.addInterceptor(rateLimitInterceptor);
         }
 
         this.client = builder.build();
@@ -95,5 +98,9 @@ public class VynceHttpClient {
     public void close() {
         client.dispatcher().executorService().shutdown();
         client.connectionPool().evictAll();
+    }
+
+    public int getRpsMetric(){
+        return rateLimitInterceptor.getRpsMetric();
     }
 }

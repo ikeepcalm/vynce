@@ -11,6 +11,7 @@ import dev.ua.ikeepcalm.vynce.tests.TestFactory;
 import dev.ua.ikeepcalm.vynce.tests.VulnerabilityTest;
 import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 import dev.ua.ikeepcalm.vynce.ui.ScanProgress;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +24,10 @@ public class Scanner {
 
     private final List<TestType> testTypes;
     private final ScanConfig config;
+
+    @Getter
     private final ScanContext context;
+
     private volatile boolean stopping = false;
     private ExecutorService executor;
     private IntermediateResultsSaver resultsSaver;
