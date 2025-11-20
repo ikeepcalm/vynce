@@ -1,7 +1,7 @@
 package dev.ua.ikeepcalm.vynce.core.service;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanResult;
-import dev.ua.ikeepcalm.vynce.report.JsonReportGenerator;
+import dev.ua.ikeepcalm.vynce.report.impl.JsonReportGenerator;
 import dev.ua.ikeepcalm.vynce.report.ReportGenerator;
 import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 

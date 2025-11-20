@@ -1,11 +1,11 @@
 package dev.ua.ikeepcalm.vynce.tests.impl;
-import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.crawler.FormData;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
+import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 import dev.ua.ikeepcalm.vynce.utils.PayloadLoader;
 import okhttp3.Response;
 
@@ -27,34 +27,45 @@ public class XssTest extends BaseVulnerabilityTest {
     }
 
     @Override
+    protected int estimateTestSteps(ScanContext context) {
+        int count = super.estimateTestSteps(context);
+        return count + 1;
+    }
+
+    @Override
     protected void runTests(ScanContext context) {
         loadPayloads();
 
         List<String> urlsWithParams = context.getCrawler().getUniquePatternUrlsWithParams();
+        List<FormData> forms = context.getCrawler().getDiscoveredForms();
+
         ConsoleUI.debug("Found " + urlsWithParams.size() + " URLs with parameters to test for XSS");
+        ConsoleUI.debug("Found " + forms.size() + " forms to test for XSS");
 
         for (String url : urlsWithParams) {
             Map<String, String> params = context.getCrawler().getParamsForUrl(url);
             if (!params.isEmpty()) {
                 String testUrl = url + "?" + buildQueryString(params);
-                testReflectedXss(context, testUrl);
+                testParamsWithProgress(url, params, (paramName, paramValue) -> {
+                    testReflectedXss(context, testUrl);
+                });
             }
         }
-
-        List<FormData> forms = context.getCrawler().getDiscoveredForms();
-        ConsoleUI.debug("Found " + forms.size() + " forms to test for XSS");
 
         for (FormData form : forms) {
             ConsoleUI.debug("Testing form: " + form.method() + " " + form.action());
 
-            if ("GET".equalsIgnoreCase(form.method())) {
-                String testUrl = form.action() + "?" + buildQueryString(form.parameters());
-                testReflectedXss(context, testUrl);
-            } else {
-                testReflectedXssPost(context, form);
-            }
+            testParamsWithProgress(form.action(), form.parameters(), (paramName, paramValue) -> {
+                if ("GET".equalsIgnoreCase(form.method())) {
+                    String testUrl = form.action() + "?" + buildQueryString(form.parameters());
+                    testReflectedXss(context, testUrl);
+                } else {
+                    testReflectedXssPost(context, form);
+                }
+            });
         }
 
+        advanceProgress("Page patterns");
         testPageXss(context, context.getTargetUrl());
     }
 
@@ -90,10 +101,9 @@ public class XssTest extends BaseVulnerabilityTest {
                     addVulnerability(createVulnerability(
                             Severity.HIGH,
                             "Reflected XSS detected in parameter '" + paramName + "'. " +
-                                    "User input is reflected in the HTML response without proper encoding.",
+                            "User input is reflected in the HTML response without proper encoding.",
                             url
                     ));
-                    ConsoleUI.warning("Reflected XSS found in parameter: " + " " + paramName);
                     return;
                 }
             }
@@ -103,10 +113,9 @@ public class XssTest extends BaseVulnerabilityTest {
                     addVulnerability(createVulnerability(
                             Severity.HIGH,
                             "Attribute-based XSS detected in parameter '" + paramName + "'. " +
-                                    "User input is reflected inside HTML attributes without proper escaping.",
+                            "User input is reflected inside HTML attributes without proper escaping.",
                             url
                     ));
-                    ConsoleUI.warning("Attribute-based XSS found in parameter: " + " " + paramName);
                     return;
                 }
             }
@@ -116,10 +125,9 @@ public class XssTest extends BaseVulnerabilityTest {
                     addVulnerability(createVulnerability(
                             Severity.HIGH,
                             "JavaScript context XSS detected in parameter '" + paramName + "'. " +
-                                    "User input is reflected inside JavaScript code.",
+                            "User input is reflected inside JavaScript code.",
                             url
                     ));
-                    ConsoleUI.warning("JavaScript XSS found in parameter: " + " " + paramName);
                     return;
                 }
             }
@@ -186,7 +194,7 @@ public class XssTest extends BaseVulnerabilityTest {
 
         for (String pattern : dangerousPatterns) {
             if (payload.toLowerCase().contains(pattern.toLowerCase()) &&
-                    body.toLowerCase().contains(pattern.toLowerCase())) {
+                body.toLowerCase().contains(pattern.toLowerCase())) {
                 return true;
             }
         }
@@ -203,10 +211,9 @@ public class XssTest extends BaseVulnerabilityTest {
                     addVulnerability(createVulnerability(
                             Severity.HIGH,
                             "Reflected XSS detected in POST parameter '" + paramName + "'. " +
-                                    "User input is reflected in the HTML response without proper encoding.",
+                            "User input is reflected in the HTML response without proper encoding.",
                             form.action() + " (POST)"
                     ));
-                    ConsoleUI.warning("Reflected XSS found in POST parameter: " + paramName);
                     return;
                 }
             }
@@ -216,10 +223,9 @@ public class XssTest extends BaseVulnerabilityTest {
                     addVulnerability(createVulnerability(
                             Severity.HIGH,
                             "Attribute-based XSS detected in POST parameter '" + paramName + "'. " +
-                                    "User input is reflected inside HTML attributes without proper escaping.",
+                            "User input is reflected inside HTML attributes without proper escaping.",
                             form.action() + " (POST)"
                     ));
-                    ConsoleUI.warning("Attribute-based XSS found in POST parameter: " + paramName);
                     return;
                 }
             }
@@ -229,10 +235,9 @@ public class XssTest extends BaseVulnerabilityTest {
                     addVulnerability(createVulnerability(
                             Severity.HIGH,
                             "JavaScript context XSS detected in POST parameter '" + paramName + "'. " +
-                                    "User input is reflected inside JavaScript code.",
+                            "User input is reflected inside JavaScript code.",
                             form.action() + " (POST)"
                     ));
-                    ConsoleUI.warning("JavaScript XSS found in POST parameter: " + paramName);
                     return;
                 }
             }

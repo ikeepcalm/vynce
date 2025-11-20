@@ -42,6 +42,19 @@ public class PathTraversalTest extends BaseVulnerabilityTest {
     }
 
     @Override
+    protected int estimateTestSteps(ScanContext context) {
+        int count = 0;
+        for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
+            if (WebCrawler.isStaticResource(url, false)) {
+                continue;
+            }
+            Map<String, String> params = context.getCrawler().getParamsForUrl(url);
+            count += params.size();
+        }
+        return count;
+    }
+
+    @Override
     protected void runTests(ScanContext context) {
         for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
             if (WebCrawler.isStaticResource(url, false)) {
@@ -51,6 +64,7 @@ public class PathTraversalTest extends BaseVulnerabilityTest {
             Map<String, String> params = context.getCrawler().getParamsForUrl(url);
             String testUrl = url + "?" + buildQueryString(params);
             for (String paramName : params.keySet()) {
+                advanceProgress("Param: " + paramName);
                 testPathTraversal(context, testUrl, paramName);
             }
         }

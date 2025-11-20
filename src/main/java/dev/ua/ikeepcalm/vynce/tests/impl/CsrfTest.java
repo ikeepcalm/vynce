@@ -19,7 +19,13 @@ public class CsrfTest extends BaseVulnerabilityTest {
     }
 
     @Override
+    protected int estimateTestSteps(ScanContext context) {
+        return 1;
+    }
+
+    @Override
     protected void runTests(ScanContext context) throws Exception {
+        advanceProgress("Checking forms");
         try (Response response = context.getHttpClient().get(context.getTargetUrl())) {
             String html = context.getHttpClient().getBodyAsString(response);
             Document doc = Jsoup.parse(html);

@@ -1,8 +1,9 @@
-package dev.ua.ikeepcalm.vynce.report;
+package dev.ua.ikeepcalm.vynce.report.impl;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanResult;
 import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
+import dev.ua.ikeepcalm.vynce.report.ReportGenerator;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

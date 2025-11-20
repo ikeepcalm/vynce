@@ -1,5 +1,9 @@
 package dev.ua.ikeepcalm.vynce.report;
 
+import dev.ua.ikeepcalm.vynce.report.impl.HtmlReportGenerator;
+import dev.ua.ikeepcalm.vynce.report.impl.JsonReportGenerator;
+import dev.ua.ikeepcalm.vynce.report.impl.MarkdownReportGenerator;
+
 import java.util.HashMap;
 import java.util.Map;
 

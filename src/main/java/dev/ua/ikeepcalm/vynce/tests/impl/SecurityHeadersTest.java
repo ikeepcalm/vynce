@@ -63,11 +63,21 @@ public class SecurityHeadersTest extends BaseVulnerabilityTest {
     }
 
     @Override
+    protected int estimateTestSteps(ScanContext context) {
+        int count = REQUIRED_HEADERS.size() + 2;
+        if (context.getTargetUrl().startsWith("https://")) {
+            count++;
+        }
+        return count;
+    }
+
+    @Override
     protected void runTests(ScanContext context) throws Exception {
         try (Response response = context.getHttpClient().get(context.getTargetUrl())) {
 
             for (Map.Entry<String, SecurityHeader> entry : REQUIRED_HEADERS.entrySet()) {
                 String headerName = entry.getKey();
+                advanceProgress("Header: " + headerName);
                 String headerValue = response.header(headerName);
 
                 if (headerValue == null || headerValue.trim().isEmpty()) {
@@ -82,9 +92,11 @@ public class SecurityHeadersTest extends BaseVulnerabilityTest {
                 }
             }
 
+            advanceProgress("Information disclosure");
             checkInformationDisclosure(response, context);
 
             if (context.getTargetUrl().startsWith("https://")) {
+                advanceProgress("HSTS configuration");
                 checkHsts(response, context);
             }
         }

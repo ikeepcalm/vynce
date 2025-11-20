@@ -8,7 +8,7 @@ Vynce Scanner supports custom vulnerability tests through a dynamic JAR loading 
 
 - Create custom security tests tailored to your needs
 - Override built-in tests with your own implementations
-- Extend the scanner without modifying the core codebase
+- Extend the vulnerabilityScanner without modifying the core codebase
 - Simply drop JAR files into a `plugins/` folder
 
 ## How Plugin Loading Works

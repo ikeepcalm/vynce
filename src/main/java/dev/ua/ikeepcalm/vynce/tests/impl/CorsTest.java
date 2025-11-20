@@ -23,12 +23,18 @@ public class CorsTest extends BaseVulnerabilityTest {
     }
 
     @Override
+    protected int estimateTestSteps(ScanContext context) {
+        return TEST_ORIGINS.length + 4;
+    }
+
+    @Override
     protected void runTests(ScanContext context) {
         testCorsConfiguration(context);
     }
 
     private void testCorsConfiguration(ScanContext context) {
         for (String testOrigin : TEST_ORIGINS) {
+            advanceProgress("Origin: " + testOrigin);
             try {
                 Map<String, String> headers = new HashMap<>();
                 headers.put("Origin", testOrigin);
@@ -81,6 +87,7 @@ public class CorsTest extends BaseVulnerabilityTest {
         String[] apiPaths = {"/api", "/api/v1", "/graphql", "/rest"};
 
         for (String path : apiPaths) {
+            advanceProgress("API path: " + path);
             String testUrl = context.getTargetUrl() + path;
 
             try (Response response = context.getHttpClient().get(testUrl, Map.of())) {

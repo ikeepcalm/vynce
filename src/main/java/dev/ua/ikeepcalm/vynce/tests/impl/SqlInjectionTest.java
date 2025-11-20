@@ -37,6 +37,8 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
             return;
         }
 
+        List<FormData> forms = context.getCrawler().getDiscoveredForms();
+
         ConsoleUI.debug("Found " + urlsWithParams.size() + " URLs with parameters to test");
         ConsoleUI.debug("URLs discovered by crawler:");
         for (String discoveredUrl : urlsWithParams) {
@@ -54,27 +56,24 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                 continue;
             }
 
-            for (String paramName : params.keySet()) {
+            String testUrl = url + "?" + buildQueryString(params);
+
+            testParamsWithProgress(url, params, (paramName, paramValue) -> {
                 ConsoleUI.debug("Testing parameter: " + paramName + " in URL: " + url);
 
-                String testUrl = url + "?" + buildQueryString(params);
-
                 testErrorBased(context, testUrl, paramName);
-
                 testBooleanBased(context, testUrl, paramName);
-
                 testTimeBased(context, testUrl, paramName);
-            }
+            });
         }
 
-        List<FormData> forms = context.getCrawler().getDiscoveredForms();
         ConsoleUI.debug("Found " + forms.size() + " forms to test");
 
         for (FormData form : forms) {
             ConsoleUI.debug("Processing form: " + form.method() + " " + form.action() +
                           " with params: " + form.parameters().keySet());
 
-            for (String paramName : form.parameters().keySet()) {
+            testParamsWithProgress(form.action(), form.parameters(), (paramName, paramValue) -> {
                 ConsoleUI.debug("Testing form parameter: " + paramName);
 
                 if ("GET".equalsIgnoreCase(form.method())) {
@@ -87,7 +86,7 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                     testBooleanBasedPost(context, form, paramName);
                     testTimeBasedPost(context, form, paramName);
                 }
-            }
+            });
         }
     }
 

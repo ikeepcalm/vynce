@@ -40,6 +40,31 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
     }
 
     @Override
+    protected int estimateTestSteps(ScanContext context) {
+        int count = 0;
+
+        for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
+            if (WebCrawler.isStaticResource(url, true)) {
+                continue;
+            }
+            Map<String, String> params = context.getCrawler().getParamsForUrl(url);
+            for (String paramName : params.keySet()) {
+                if (isRedirectParameter(paramName)) {
+                    count++;
+                }
+            }
+        }
+
+        for (String url : context.getCrawler().getUniquePatternUrls()) {
+            if (!WebCrawler.isStaticResource(url, true)) {
+                count += REDIRECT_PARAMS.size();
+            }
+        }
+
+        return count;
+    }
+
+    @Override
     protected void runTests(ScanContext context) {
         for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
             if (WebCrawler.isStaticResource(url, true)) {
@@ -50,6 +75,7 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
             String testUrl = url + "?" + buildQueryString(params);
             for (String paramName : params.keySet()) {
                 if (isRedirectParameter(paramName)) {
+                    advanceProgress("Param: " + paramName);
                     testOpenRedirect(context, testUrl, paramName);
                 }
             }
@@ -61,6 +87,7 @@ public class OpenRedirectTest extends BaseVulnerabilityTest {
             }
 
             for (String redirectParam : REDIRECT_PARAMS) {
+                advanceProgress("Testing: " + redirectParam);
                 testOpenRedirectParameter(context, url, redirectParam);
             }
         }

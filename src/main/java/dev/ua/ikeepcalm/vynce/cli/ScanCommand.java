@@ -4,12 +4,12 @@ import dev.ua.ikeepcalm.vynce.core.model.ScanConfig;
 import dev.ua.ikeepcalm.vynce.core.model.ScanResult;
 import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
-import dev.ua.ikeepcalm.vynce.core.service.Scanner;
+import dev.ua.ikeepcalm.vynce.core.service.VulnerabilityScanner;
 import dev.ua.ikeepcalm.vynce.report.ReportFactory;
 import dev.ua.ikeepcalm.vynce.report.ReportGenerator;
 import dev.ua.ikeepcalm.vynce.report.ReportManager;
 import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
-import dev.ua.ikeepcalm.vynce.ui.ScanProgress;
+import dev.ua.ikeepcalm.vynce.ui.progress.impl.ScanProgress;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -128,11 +128,11 @@ public class ScanCommand implements Callable<Integer> {
                 .build();
 
         ScanProgress progress = new ScanProgress(testTypes.size());
-        Scanner scanner = new Scanner(targetUrl, testTypes, config);
+        VulnerabilityScanner vulnerabilityScanner = new VulnerabilityScanner(targetUrl, testTypes, config);
 
-        Thread shutdownHook = setupShutdownHook(scanner, progress);
+        Thread shutdownHook = setupShutdownHook(vulnerabilityScanner, progress);
 
-        ScanResult result = scanner.scanWithProgress(progress);
+        ScanResult result = vulnerabilityScanner.scanWithProgress(progress);
 
         try {
             Runtime.getRuntime().removeShutdownHook(shutdownHook);
@@ -142,7 +142,7 @@ public class ScanCommand implements Callable<Integer> {
         displayResults(result);
 
         if (parent.verbose) {
-            long rps = scanner.getContext().getHttpClient().getRpsMetric() / (result.getDuration() / 1000);
+            long rps = vulnerabilityScanner.getContext().getHttpClient().getRpsMetric() / (result.getDuration() / 1000);
             ConsoleUI.debug("RPS: " + rps);
         }
 
@@ -182,13 +182,13 @@ public class ScanCommand implements Callable<Integer> {
         System.out.println();
     }
 
-    private Thread setupShutdownHook(Scanner scanner, ScanProgress progress) {
+    private Thread setupShutdownHook(VulnerabilityScanner vulnerabilityScanner, ScanProgress progress) {
         Thread shutdownHook = new Thread(() -> {
-            scanner.stop();
-            progress.complete();
+            vulnerabilityScanner.stop();
+            progress.stop();
             ConsoleUI.warning("Scan interrupted by user. Cleaning up...");
 
-            ScanResult partialResult = scanner.getPartialResults();
+            ScanResult partialResult = vulnerabilityScanner.getPartialResults();
 
             if (partialResult != null && !partialResult.getVulnerabilities().isEmpty()) {
                 ConsoleUI.info("Generating report from partial results...");

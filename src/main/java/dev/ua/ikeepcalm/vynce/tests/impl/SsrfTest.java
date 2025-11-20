@@ -33,6 +33,22 @@ public class SsrfTest extends BaseVulnerabilityTest {
     }
 
     @Override
+    protected int estimateTestSteps(ScanContext context) {
+        int count = 0;
+        for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
+            if (WebCrawler.isStaticResource(url, false)) {
+                continue;
+            }
+            Map<String, String> params = context.getCrawler().getParamsForUrl(url);
+            count += params.size();
+        }
+        for (FormData form : context.getCrawler().getDiscoveredForms()) {
+            count += form.parameters().size();
+        }
+        return count;
+    }
+
+    @Override
     protected void runTests(ScanContext context) {
         for (String url : context.getCrawler().getUniquePatternUrlsWithParams()) {
             if (WebCrawler.isStaticResource(url, false)) {
@@ -42,12 +58,16 @@ public class SsrfTest extends BaseVulnerabilityTest {
             Map<String, String> params = context.getCrawler().getParamsForUrl(url);
             String testUrl = url + "?" + buildQueryString(params);
             for (String paramName : params.keySet()) {
+                advanceProgress("Param: " + paramName);
                 testSsrfInParameter(context, testUrl, paramName);
             }
         }
 
         for (FormData form : context.getCrawler().getDiscoveredForms()) {
-            testSsrfInForm(context, form);
+            for (String paramName : form.parameters().keySet()) {
+                advanceProgress("Form param: " + paramName);
+                testSsrfInFormParam(context, form, paramName);
+            }
         }
     }
 
@@ -76,51 +96,49 @@ public class SsrfTest extends BaseVulnerabilityTest {
         }
     }
 
-    private void testSsrfInForm(ScanContext context, FormData form) {
-        for (String paramName : form.parameters().keySet()) {
-            for (String payload : SSRF_PAYLOADS) {
-                try {
-                    Map<String, String> modifiedParams = form.parameters();
-                    modifiedParams.put(paramName, payload);
+    private void testSsrfInFormParam(ScanContext context, FormData form, String paramName) {
+        for (String payload : SSRF_PAYLOADS) {
+            try {
+                Map<String, String> modifiedParams = form.parameters();
+                modifiedParams.put(paramName, payload);
 
-                    if ("POST".equalsIgnoreCase(form.method())) {
-                        try (Response response = context.getHttpClient().post(form.action(), modifiedParams, Collections.emptyMap())) {
-                            if (response.isSuccessful()) {
-                                String body = response.body() != null ? response.body().string() : "";
+                if ("POST".equalsIgnoreCase(form.method())) {
+                    try (Response response = context.getHttpClient().post(form.action(), modifiedParams, Collections.emptyMap())) {
+                        if (response.isSuccessful()) {
+                            String body = response.body() != null ? response.body().string() : "";
 
-                                if (containsSsrfIndicators(body, payload)) {
-                                    addVulnerability(createVulnerability(
-                                            Severity.HIGH,
-                                            "Server-Side Request Forgery (SSRF)",
-                                            "Form parameter '" + paramName + "' may be vulnerable to SSRF",
-                                            form.action(),
-                                            payload
-                                    ));
-                                    break;
-                                }
-                            }
-                        }
-                    } else {
-                        String testUrl = buildUrlWithParams(form.action(), modifiedParams);
-                        try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {
-                            if (response.isSuccessful()) {
-                                String body = response.body() != null ? response.body().string() : "";
-
-                                if (containsSsrfIndicators(body, payload)) {
-                                    addVulnerability(createVulnerability(
-                                            Severity.HIGH,
-                                            "Server-Side Request Forgery (SSRF)",
-                                            "Form parameter '" + paramName + "' may be vulnerable to SSRF",
-                                            form.action(),
-                                            payload
-                                    ));
-                                    break;
-                                }
+                            if (containsSsrfIndicators(body, payload)) {
+                                addVulnerability(createVulnerability(
+                                        Severity.HIGH,
+                                        "Server-Side Request Forgery (SSRF)",
+                                        "Form parameter '" + paramName + "' may be vulnerable to SSRF",
+                                        form.action(),
+                                        payload
+                                ));
+                                break;
                             }
                         }
                     }
-                } catch (Exception ignored) {
+                } else {
+                    String testUrl = buildUrlWithParams(form.action(), modifiedParams);
+                    try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {
+                        if (response.isSuccessful()) {
+                            String body = response.body() != null ? response.body().string() : "";
+
+                            if (containsSsrfIndicators(body, payload)) {
+                                addVulnerability(createVulnerability(
+                                        Severity.HIGH,
+                                        "Server-Side Request Forgery (SSRF)",
+                                        "Form parameter '" + paramName + "' may be vulnerable to SSRF",
+                                        form.action(),
+                                        payload
+                                ));
+                                break;
+                            }
+                        }
+                    }
                 }
+            } catch (Exception ignored) {
             }
         }
     }

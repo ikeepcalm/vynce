@@ -11,11 +11,10 @@ import java.util.concurrent.TimeUnit;
 public class VynceHttpClient {
 
     private final OkHttpClient client;
-    private final CookieJar cookieJar;
     private final RateLimitInterceptor rateLimitInterceptor;
 
     public VynceHttpClient(ScanConfig config) {
-        this.cookieJar = CookieJar.NO_COOKIES;
+        CookieJar cookieJar = CookieJar.NO_COOKIES;
         this.rateLimitInterceptor = new RateLimitInterceptor(config.getRequestDelay());
 
         OkHttpClient.Builder builder = new OkHttpClient.Builder()

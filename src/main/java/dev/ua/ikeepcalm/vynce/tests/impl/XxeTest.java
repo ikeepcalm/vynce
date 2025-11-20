@@ -35,9 +35,22 @@ public class XxeTest extends BaseVulnerabilityTest {
     }
 
     @Override
+    protected int estimateTestSteps(ScanContext context) {
+        int count = 0;
+        for (FormData form : context.getCrawler().getDiscoveredForms()) {
+            if ("POST".equalsIgnoreCase(form.method())) {
+                count++;
+            }
+        }
+        count += 4;
+        return count;
+    }
+
+    @Override
     protected void runTests(ScanContext context) {
         for (FormData form : context.getCrawler().getDiscoveredForms()) {
             if ("POST".equalsIgnoreCase(form.method())) {
+                advanceProgress("Form: " + form.action());
                 testXxeInForm(context, form);
             }
         }
@@ -79,6 +92,7 @@ public class XxeTest extends BaseVulnerabilityTest {
         String[] commonXmlEndpoints = {"/api/xml", "/upload", "/process", "/import"};
 
         for (String endpoint : commonXmlEndpoints) {
+            advanceProgress("Endpoint: " + endpoint);
             String targetUrl = context.getTargetUrl() + endpoint;
 
             for (String payload : XXE_PAYLOADS) {
