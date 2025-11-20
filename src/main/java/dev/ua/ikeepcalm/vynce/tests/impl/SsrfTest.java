@@ -39,9 +39,10 @@ public class SsrfTest extends BaseVulnerabilityTest {
                 continue;
             }
 
-            Map<String, String> params = extractParams(url);
+            Map<String, String> params = context.getCrawler().getParamsForUrl(url);
+            String testUrl = url + "?" + buildQueryString(params);
             for (String paramName : params.keySet()) {
-                testSsrfInParameter(context, url, paramName);
+                testSsrfInParameter(context, testUrl, paramName);
             }
         }
 
@@ -82,32 +83,57 @@ public class SsrfTest extends BaseVulnerabilityTest {
                     Map<String, String> modifiedParams = form.parameters();
                     modifiedParams.put(paramName, payload);
 
-                    Response response;
                     if ("POST".equalsIgnoreCase(form.method())) {
-                        response = context.getHttpClient().post(form.action(), modifiedParams, Collections.emptyMap());
+                        try (Response response = context.getHttpClient().post(form.action(), modifiedParams, Collections.emptyMap())) {
+                            if (response.isSuccessful()) {
+                                String body = response.body() != null ? response.body().string() : "";
+
+                                if (containsSsrfIndicators(body, payload)) {
+                                    addVulnerability(createVulnerability(
+                                            Severity.HIGH,
+                                            "Server-Side Request Forgery (SSRF)",
+                                            "Form parameter '" + paramName + "' may be vulnerable to SSRF",
+                                            form.action(),
+                                            payload
+                                    ));
+                                    break;
+                                }
+                            }
+                        }
                     } else {
                         String testUrl = buildUrlWithParams(form.action(), modifiedParams);
-                        response = context.getHttpClient().get(testUrl, Collections.emptyMap());
-                    }
+                        try (Response response = context.getHttpClient().get(testUrl, Collections.emptyMap())) {
+                            if (response.isSuccessful()) {
+                                String body = response.body() != null ? response.body().string() : "";
 
-                    if (response.isSuccessful()) {
-                        String body = response.body() != null ? response.body().string() : "";
-
-                        if (containsSsrfIndicators(body, payload)) {
-                            addVulnerability(createVulnerability(
-                                    Severity.HIGH,
-                                    "Server-Side Request Forgery (SSRF)",
-                                    "Form parameter '" + paramName + "' may be vulnerable to SSRF",
-                                    form.action(),
-                                    payload
-                            ));
-                            break;
+                                if (containsSsrfIndicators(body, payload)) {
+                                    addVulnerability(createVulnerability(
+                                            Severity.HIGH,
+                                            "Server-Side Request Forgery (SSRF)",
+                                            "Form parameter '" + paramName + "' may be vulnerable to SSRF",
+                                            form.action(),
+                                            payload
+                                    ));
+                                    break;
+                                }
+                            }
                         }
                     }
                 } catch (Exception ignored) {
                 }
             }
         }
+    }
+
+    private String buildQueryString(Map<String, String> params) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            if (!sb.isEmpty()) {
+                sb.append("&");
+            }
+            sb.append(entry.getKey()).append("=").append(entry.getValue());
+        }
+        return sb.toString();
     }
 
     private boolean containsSsrfIndicators(String body, String payload) {

@@ -47,11 +47,23 @@ public class LdapInjectionTest extends BaseVulnerabilityTest {
                 continue;
             }
 
-            Map<String, String> params = extractParams(url);
+            Map<String, String> params = context.getCrawler().getParamsForUrl(url);
+            String testUrl = url + "?" + buildQueryString(params);
             for (String paramName : params.keySet()) {
-                testLdapInjection(context, url, paramName);
+                testLdapInjection(context, testUrl, paramName);
             }
         }
+    }
+
+    private String buildQueryString(Map<String, String> params) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            if (!sb.isEmpty()) {
+                sb.append("&");
+            }
+            sb.append(entry.getKey()).append("=").append(entry.getValue());
+        }
+        return sb.toString();
     }
 
     private void testLdapInjection(ScanContext context, String url, String paramName) {

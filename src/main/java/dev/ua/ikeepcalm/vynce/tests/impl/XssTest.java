@@ -4,12 +4,14 @@ import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
+import dev.ua.ikeepcalm.vynce.crawler.FormData;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
 import dev.ua.ikeepcalm.vynce.utils.PayloadLoader;
 import okhttp3.Response;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,13 +30,43 @@ public class XssTest extends BaseVulnerabilityTest {
     protected void runTests(ScanContext context) {
         loadPayloads();
 
-        String url = context.getTargetUrl();
+        List<String> urlsWithParams = context.getCrawler().getUniquePatternUrlsWithParams();
+        ConsoleUI.debug("Found " + urlsWithParams.size() + " URLs with parameters to test for XSS");
 
-        if (url.contains("?")) {
-            testReflectedXss(context, url);
+        for (String url : urlsWithParams) {
+            Map<String, String> params = context.getCrawler().getParamsForUrl(url);
+            if (!params.isEmpty()) {
+                String testUrl = url + "?" + buildQueryString(params);
+                testReflectedXss(context, testUrl);
+            }
         }
 
-        testPageXss(context, url);
+        List<FormData> forms = context.getCrawler().getDiscoveredForms();
+        ConsoleUI.debug("Found " + forms.size() + " forms to test for XSS");
+
+        for (FormData form : forms) {
+            ConsoleUI.debug("Testing form: " + form.method() + " " + form.action());
+
+            if ("GET".equalsIgnoreCase(form.method())) {
+                String testUrl = form.action() + "?" + buildQueryString(form.parameters());
+                testReflectedXss(context, testUrl);
+            } else {
+                testReflectedXssPost(context, form);
+            }
+        }
+
+        testPageXss(context, context.getTargetUrl());
+    }
+
+    private String buildQueryString(Map<String, String> params) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            if (!sb.isEmpty()) {
+                sb.append("&");
+            }
+            sb.append(entry.getKey()).append("=").append(entry.getValue());
+        }
+        return sb.toString();
     }
 
     private void loadPayloads() {
@@ -157,6 +189,93 @@ public class XssTest extends BaseVulnerabilityTest {
                     body.toLowerCase().contains(pattern.toLowerCase())) {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    private void testReflectedXssPost(ScanContext context, FormData form) {
+        for (String paramName : form.parameters().keySet()) {
+            ConsoleUI.debug("Testing POST parameter for XSS: " + paramName);
+
+            for (String payload : basicPayloads) {
+                if (testPayloadPost(context, form, paramName, payload)) {
+                    addVulnerability(createVulnerability(
+                            Severity.HIGH,
+                            "Reflected XSS detected in POST parameter '" + paramName + "'. " +
+                                    "User input is reflected in the HTML response without proper encoding.",
+                            form.action() + " (POST)"
+                    ));
+                    ConsoleUI.warning("Reflected XSS found in POST parameter: " + paramName);
+                    return;
+                }
+            }
+
+            for (String payload : attributePayloads) {
+                if (testPayloadPost(context, form, paramName, payload)) {
+                    addVulnerability(createVulnerability(
+                            Severity.HIGH,
+                            "Attribute-based XSS detected in POST parameter '" + paramName + "'. " +
+                                    "User input is reflected inside HTML attributes without proper escaping.",
+                            form.action() + " (POST)"
+                    ));
+                    ConsoleUI.warning("Attribute-based XSS found in POST parameter: " + paramName);
+                    return;
+                }
+            }
+
+            for (String payload : jsPayloads) {
+                if (testJsPayloadPost(context, form, paramName, payload)) {
+                    addVulnerability(createVulnerability(
+                            Severity.HIGH,
+                            "JavaScript context XSS detected in POST parameter '" + paramName + "'. " +
+                                    "User input is reflected inside JavaScript code.",
+                            form.action() + " (POST)"
+                    ));
+                    ConsoleUI.warning("JavaScript XSS found in POST parameter: " + paramName);
+                    return;
+                }
+            }
+        }
+    }
+
+    private boolean testPayloadPost(ScanContext context, FormData form, String paramName, String payload) {
+        try {
+            Map<String, String> testParams = new HashMap<>(form.parameters());
+            testParams.put(paramName, payload);
+
+            try (Response response = context.getHttpClient().post(form.action(), testParams)) {
+                String body = context.getHttpClient().getBodyAsString(response);
+
+                if (isReflectedUnsafe(body, payload)) {
+                    ConsoleUI.debug("XSS payload reflected in POST: " + payload);
+                    return true;
+                }
+            }
+
+        } catch (Exception e) {
+            ConsoleUI.debug("Error testing XSS POST payload: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+    private boolean testJsPayloadPost(ScanContext context, FormData form, String paramName, String payload) {
+        try {
+            Map<String, String> testParams = new HashMap<>(form.parameters());
+            testParams.put(paramName, payload);
+
+            try (Response response = context.getHttpClient().post(form.action(), testParams)) {
+                String body = context.getHttpClient().getBodyAsString(response);
+
+                if (body.contains(payload) || body.contains(payload.replace("javascript:", ""))) {
+                    ConsoleUI.debug("JavaScript XSS payload reflected in POST: " + payload);
+                    return true;
+                }
+            }
+
+        } catch (Exception e) {
+            ConsoleUI.debug("Error testing JavaScript XSS POST: " + e.getMessage());
         }
 
         return false;

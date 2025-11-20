@@ -6,9 +6,15 @@ import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 import org.fusesource.jansi.AnsiConsole;
 import picocli.CommandLine;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class VynceApplication {
 
     public static void main(String[] args) {
+        Logger.getLogger("okhttp3.OkHttpClient").setLevel(Level.SEVERE);
+        Logger.getLogger("okhttp3.internal.platform.Platform").setLevel(Level.SEVERE);
+
         AnsiConsole.systemInstall();
 
         for (String arg : args) {
