@@ -234,7 +234,8 @@ public class ScanCommand implements Callable<Integer> {
             ConsoleUI.success("Target responded with status: " + response.statusCode());
             return true;
         } catch (Exception e) {
-            ConsoleUI.debug("HTTP/2 connection failed, trying HTTP/1.1: " + e.getMessage());
+            String firstError = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            ConsoleUI.debug("HTTP/2 connection failed, trying HTTP/1.1: " + firstError);
 
             try (HttpClient client = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
@@ -253,7 +254,13 @@ public class ScanCommand implements Callable<Integer> {
                 ConsoleUI.success("Target responded with status: " + response.statusCode() + " (HTTP/1.1)");
                 return true;
             } catch (Exception e2) {
-                ConsoleUI.error("Failed to connect: " + e2.getMessage());
+                String errorMsg = e2.getMessage() != null ? e2.getMessage() : e2.getClass().getSimpleName();
+                ConsoleUI.error("Failed to connect: " + errorMsg);
+                if (parent != null && parent.verbose) {
+                    ConsoleUI.debug("First attempt: " + firstError);
+                    ConsoleUI.debug("Second attempt: " + errorMsg);
+                    e2.printStackTrace();
+                }
                 ConsoleUI.warning("Please check if the target is accessible");
                 return false;
             }
