@@ -259,7 +259,7 @@ public class WebCrawler {
         for (Element link : links) {
             String href = link.absUrl("href");
             if (!href.isEmpty() && isSameDomain(href)) {
-                String cleanUrl = removeFragment(href);
+                String cleanUrl = normalizeUrl(removeFragment(href));
 
                 if (isStaticResource(cleanUrl, true)) {
                     skippedStaticResources++;
@@ -289,6 +289,8 @@ public class WebCrawler {
             if (action.isEmpty()) {
                 action = pageUrl;
             }
+
+            action = normalizeUrl(action);
 
             String method = form.attr("method").toUpperCase();
             if (method.isEmpty()) {
@@ -359,7 +361,22 @@ public class WebCrawler {
     }
 
     private String normalizeUrl(String url) {
-        return url;
+        if (url == null || url.isEmpty()) {
+            return url;
+        }
+
+        try {
+            url = url.replaceAll("(?<!:)/{2,}", "/");
+
+            if (url.endsWith("/") && !url.equals(url.substring(0, url.indexOf("://") + 3))) {
+                url = url.substring(0, url.length() - 1);
+            }
+
+            return url;
+        } catch (Exception e) {
+            ConsoleUI.debug("Error normalizing URL: " + url + " - " + e.getMessage());
+            return url;
+        }
     }
 
     public List<String> getUrlsWithParams() {
