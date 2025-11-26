@@ -111,9 +111,16 @@ public class ScanCommand implements Callable<Integer> {
         }
 
         if (testTypes == null || testTypes.isEmpty()) {
-            testTypes = Arrays.asList(TestType.values());
+            testTypes = new ArrayList<>(Arrays.asList(TestType.values()));
+        } else {
+            testTypes = new ArrayList<>(testTypes);
         }
         testTypes.removeAll(excludeTestTypes);
+
+        if (testTypes.isEmpty()) {
+            ConsoleUI.error("No tests to run after applying exclusions");
+            return 1;
+        }
 
         displayConfiguration();
 
