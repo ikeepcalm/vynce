@@ -4,11 +4,11 @@ import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
+import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 import okhttp3.Response;
 
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.List;
 
 
@@ -23,22 +23,35 @@ public class JWTTest extends BaseVulnerabilityTest {
 
     @Override
     public TestType getTestType() {
-        return TestType.HEADERS;
+        return TestType.CUSTOM;
+    }
+
+    @Override
+    public String getTestName() {
+        return "JWT Security";
+    }
+
+    @Override
+    protected int estimateTestSteps(ScanContext context) {
+        return JWT_HEADERS.size() + 1;
     }
 
     @Override
     protected void runTests(ScanContext context) throws Exception {
-        Response response = context.getHttpClient().get(context.getTargetUrl(), Collections.emptyMap());
+        try (Response response = context.getHttpClient().get(context.getTargetUrl())) {
 
-        for (String headerName : JWT_HEADERS) {
-            String headerValue = response.header(headerName);
-            if (headerValue != null && looksLikeJWT(headerValue)) {
-                analyzeJWT(context, headerName, headerValue);
+            for (String headerName : JWT_HEADERS) {
+                advanceProgress("Header: " + headerName);
+                String headerValue = response.header(headerName);
+                if (headerValue != null && looksLikeJWT(headerValue)) {
+                    analyzeJWT(context, headerName, headerValue);
+                }
             }
-        }
 
-        String body = response.body() != null ? response.body().string() : "";
-        findJWTsInBody(context, body);
+            advanceProgress("Response body");
+            String body = context.getHttpClient().getBodyAsString(response);
+            findJWTsInBody(context, body);
+        }
     }
 
     private boolean looksLikeJWT(String value) {
@@ -99,7 +112,8 @@ public class JWTTest extends BaseVulnerabilityTest {
                 ));
             }
 
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            ConsoleUI.debug("Error analyzing JWT: " + e.getMessage());
         }
     }
 

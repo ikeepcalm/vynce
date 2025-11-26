@@ -99,7 +99,7 @@ public class VynceHttpClient {
         client.connectionPool().evictAll();
     }
 
-    public int getRpsMetric(){
+    public int getRpsMetric() {
         return rateLimitInterceptor.getRpsMetric();
     }
 }

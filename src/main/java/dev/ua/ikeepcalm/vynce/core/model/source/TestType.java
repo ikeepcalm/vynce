@@ -14,7 +14,8 @@ public enum TestType {
     LDAP("LDAP Injection"),
     HEADERS("Security Headers"),
     CORS("CORS Misconfiguration"),
-    OPEN_REDIRECT("Open Redirect");
+    OPEN_REDIRECT("Open Redirect"),
+    CUSTOM("Custom Plugin");
 
     private final String displayName;
 

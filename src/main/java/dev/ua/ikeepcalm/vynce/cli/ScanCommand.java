@@ -8,6 +8,7 @@ import dev.ua.ikeepcalm.vynce.core.service.VulnerabilityScanner;
 import dev.ua.ikeepcalm.vynce.report.ReportFactory;
 import dev.ua.ikeepcalm.vynce.report.ReportGenerator;
 import dev.ua.ikeepcalm.vynce.report.ReportManager;
+import dev.ua.ikeepcalm.vynce.tests.TestFactory;
 import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 import dev.ua.ikeepcalm.vynce.ui.progress.impl.ScanProgress;
 import picocli.CommandLine;
@@ -136,7 +137,11 @@ public class ScanCommand implements Callable<Integer> {
                 .verbose(isVerbose)
                 .build();
 
-        ScanProgress progress = new ScanProgress(testTypes.size(), isVerbose);
+        int totalTests = testTypes.stream()
+                .mapToInt(testType -> TestFactory.createTests(testType).size())
+                .sum();
+
+        ScanProgress progress = new ScanProgress(totalTests, isVerbose);
         VulnerabilityScanner vulnerabilityScanner = new VulnerabilityScanner(targetUrl, testTypes, config);
 
         Thread shutdownHook = setupShutdownHook(vulnerabilityScanner, progress);

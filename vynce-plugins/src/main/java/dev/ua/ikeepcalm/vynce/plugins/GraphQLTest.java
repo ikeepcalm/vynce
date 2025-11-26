@@ -1,10 +1,10 @@
 package dev.ua.ikeepcalm.vynce.plugins;
 
 import dev.ua.ikeepcalm.vynce.core.model.ScanContext;
-import dev.ua.ikeepcalm.vynce.core.model.Vulnerability;
 import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
+import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -33,13 +33,25 @@ public class GraphQLTest extends BaseVulnerabilityTest {
 
     @Override
     public TestType getTestType() {
-        return TestType.SSRF;
+        return TestType.CUSTOM;
+    }
+
+    @Override
+    public String getTestName() {
+        return "GraphQL Security";
+    }
+
+    @Override
+    protected int estimateTestSteps(ScanContext context) {
+        return GRAPHQL_PATHS.size() * (GRAPHQL_INTROSPECTION_QUERIES.size() + 1);
     }
 
     @Override
     protected void runTests(ScanContext context) throws Exception {
         for (String path : GRAPHQL_PATHS) {
             String graphqlUrl = context.getTargetUrl() + path;
+            ConsoleUI.debug("Testing GraphQL path: " + path);
+
             testGraphQLIntrospection(context, graphqlUrl);
             testGraphQLBatchingAttacks(context, graphqlUrl);
         }
@@ -47,6 +59,7 @@ public class GraphQLTest extends BaseVulnerabilityTest {
 
     private void testGraphQLIntrospection(ScanContext context, String url) {
         for (String query : GRAPHQL_INTROSPECTION_QUERIES) {
+            advanceProgress("Introspection: " + url);
             try {
                 Request request = new Request.Builder()
                         .url(url)
@@ -54,28 +67,32 @@ public class GraphQLTest extends BaseVulnerabilityTest {
                         .addHeader("Content-Type", "application/json")
                         .build();
 
-                Response response = context.getHttpClient().executeRequest(request);
+                try (Response response = context.getHttpClient().executeRequest(request)) {
+                    if (response.isSuccessful()) {
+                        String body = context.getHttpClient().getBodyAsString(response);
 
-                if (response.isSuccessful()) {
-                    String body = response.body() != null ? response.body().string() : "";
-
-                    if (body.contains("__schema") || body.contains("__type") || body.contains("queryType")) {
-                        addVulnerability(createVulnerability(
-                                Severity.MEDIUM,
-                                "GraphQL Introspection Enabled",
-                                "GraphQL introspection is enabled, exposing schema information",
-                                url,
-                                query
-                        ));
-                        break;
+                        if (body.contains("__schema") || body.contains("__type") || body.contains("queryType")) {
+                            addVulnerability(createVulnerability(
+                                    Severity.MEDIUM,
+                                    "GraphQL Introspection Enabled",
+                                    "GraphQL introspection is enabled, exposing schema information",
+                                    url,
+                                    query
+                            ));
+                            ConsoleUI.debug("GraphQL introspection vulnerability found at: " + url);
+                            break;
+                        }
                     }
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                ConsoleUI.debug("Error testing GraphQL introspection: " + e.getMessage());
             }
         }
     }
 
     private void testGraphQLBatchingAttacks(ScanContext context, String url) {
+        advanceProgress("Batching: " + url);
+
         String batchQuery = "[" +
                 "{\"query\":\"{__typename}\"}," +
                 "{\"query\":\"{__typename}\"}," +
@@ -92,23 +109,25 @@ public class GraphQLTest extends BaseVulnerabilityTest {
                     .build();
 
             long startTime = System.currentTimeMillis();
-            Response response = context.getHttpClient().executeRequest(request);
-            long duration = System.currentTimeMillis() - startTime;
+            try (Response response = context.getHttpClient().executeRequest(request)) {
 
-            if (response.isSuccessful()) {
-                String body = response.body() != null ? response.body().string() : "";
+                if (response.isSuccessful()) {
+                    String body = context.getHttpClient().getBodyAsString(response);
 
-                if (body.contains("\"data\"") && body.split("\"data\"").length > 2) {
-                    addVulnerability(createVulnerability(
-                            Severity.LOW,
-                            "GraphQL Query Batching Allowed",
-                            "GraphQL endpoint allows query batching, which could be abused for DoS attacks",
-                            url,
-                            "Batch query with 5 operations"
-                    ));
+                    if (body.contains("\"data\"") && body.split("\"data\"").length > 2) {
+                        addVulnerability(createVulnerability(
+                                Severity.LOW,
+                                "GraphQL Query Batching Allowed",
+                                "GraphQL endpoint allows query batching, which could be abused for DoS attacks",
+                                url,
+                                "Batch query with 5 operations"
+                        ));
+                        ConsoleUI.debug("GraphQL batching vulnerability found at: " + url);
+                    }
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            ConsoleUI.debug("Error testing GraphQL batching: " + e.getMessage());
         }
     }
 }

@@ -7,6 +7,7 @@ import lombok.Setter;
 @Setter
 public class ProgressTracker {
 
+    private static final char[] SPINNER_FRAMES = {'/', '-', '\\', '|'};
     private final String testName;
     private int current;
     private int total;
@@ -15,8 +16,6 @@ public class ProgressTracker {
     private int vulnerabilitiesFound;
     private long startTime;
     private int spinnerIndex;
-
-    private static final char[] SPINNER_FRAMES = {'/', '-', '\\', '|'};
 
     public ProgressTracker(String testName, int total) {
         this.testName = testName;

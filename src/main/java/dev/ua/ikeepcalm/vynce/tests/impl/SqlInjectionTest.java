@@ -71,7 +71,7 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
 
         for (FormData form : forms) {
             ConsoleUI.debug("Processing form: " + form.method() + " " + form.action() +
-                          " with params: " + form.parameters().keySet());
+                            " with params: " + form.parameters().keySet());
 
             testParamsWithProgress(form.action(), form.parameters(), (paramName, paramValue) -> {
                 ConsoleUI.debug("Testing form parameter: " + paramName);
@@ -168,7 +168,7 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                         int falseStatus = falseResponse.code();
 
                         ConsoleUI.debug("Boolean test - baseline: " + baselineLength +
-                                       ", true: " + trueLength + ", false: " + falseLength);
+                                        ", true: " + trueLength + ", false: " + falseLength);
 
                         if (baselineStatus == 200 && trueStatus == 200 && falseStatus == 200) {
                             int trueDiff = Math.abs(trueLength - baselineLength);
@@ -280,7 +280,7 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                         int falseStatus = falseResponse.code();
 
                         ConsoleUI.debug("Boolean POST test - baseline: " + baselineLength +
-                                       ", true: " + trueLength + ", false: " + falseLength);
+                                        ", true: " + trueLength + ", false: " + falseLength);
 
                         if (baselineStatus == 200 && trueStatus == 200 && falseStatus == 200) {
                             int trueDiff = Math.abs(trueLength - baselineLength);
@@ -352,23 +352,23 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
         String lowerBody = body.toLowerCase();
 
         String[] specificPatterns = {
-            "sql.*error",
-            "error.*sql",
-            "syntax.*error.*sql",
-            "sql.*syntax.*error",
-            "sql.*exception",
-            "exception.*sql",
-            "mysql.*error",
-            "postgresql.*error",
-            "oracle.*error",
-            "sqlserver.*error",
-            "sqlite.*error",
-            "database.*error.*query",
-            "query.*error",
-            "unclosed.*quot",
-            "unterminated.*string",
-            "invalid.*sql",
-            "sql.*warning"
+                "sql.*error",
+                "error.*sql",
+                "syntax.*error.*sql",
+                "sql.*syntax.*error",
+                "sql.*exception",
+                "exception.*sql",
+                "mysql.*error",
+                "postgresql.*error",
+                "oracle.*error",
+                "sqlserver.*error",
+                "sqlite.*error",
+                "database.*error.*query",
+                "query.*error",
+                "unclosed.*quot",
+                "unterminated.*string",
+                "invalid.*sql",
+                "sql.*warning"
         };
 
         for (String specificPattern : specificPatterns) {
