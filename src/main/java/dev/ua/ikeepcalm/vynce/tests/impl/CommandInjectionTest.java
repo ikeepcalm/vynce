@@ -5,12 +5,14 @@ import dev.ua.ikeepcalm.vynce.core.model.source.Severity;
 import dev.ua.ikeepcalm.vynce.core.model.source.TestType;
 import dev.ua.ikeepcalm.vynce.crawler.WebCrawler;
 import dev.ua.ikeepcalm.vynce.tests.BaseVulnerabilityTest;
+import dev.ua.ikeepcalm.vynce.ui.ConsoleUI;
 import dev.ua.ikeepcalm.vynce.utils.PayloadLoader;
 import okhttp3.Response;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class CommandInjectionTest extends BaseVulnerabilityTest {
 
@@ -109,9 +111,26 @@ public class CommandInjectionTest extends BaseVulnerabilityTest {
     }
 
     private boolean containsCommandOutputIndicators(String body) {
+        int matchCount = 0;
         for (String indicator : commandOutputIndicators) {
-            if (body.contains(indicator)) {
-                return true;
+            try {
+                if (Pattern.compile(indicator).matcher(body).find()) {
+                    matchCount++;
+                    ConsoleUI.debug("Command output indicator matched: " + indicator);
+
+                    if (matchCount >= 2) {
+                        return true;
+                    }
+                }
+            } catch (Exception e) {
+                if (body.contains(indicator)) {
+                    matchCount++;
+                    ConsoleUI.debug("Command output indicator matched (literal): " + indicator);
+
+                    if (matchCount >= 2) {
+                        return true;
+                    }
+                }
             }
         }
         return false;

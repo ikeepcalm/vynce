@@ -19,11 +19,15 @@
     "gid=",
     "groups=",
     "root:x:",
-    "daemon:",
-    "total ",
-    "drwxr",
-    "bin",
-    "usr",
-    "etc"
+    "daemon:x:",
+    "total \\d+",
+    "drwxr-xr-x",
+    "drwxrwxrwx",
+    "/bin/bash",
+    "/bin/sh",
+    "/usr/bin",
+    "/etc/passwd",
+    "\\bLinux\\b",
+    "\\bDarwin\\b"
   ]
 }

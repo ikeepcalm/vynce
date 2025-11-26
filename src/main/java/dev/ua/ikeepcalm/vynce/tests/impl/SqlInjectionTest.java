@@ -149,6 +149,7 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
             try (Response baselineResponse = context.getHttpClient().get(url)) {
                 String baselineBody = context.getHttpClient().getBodyAsString(baselineResponse);
                 int baselineLength = baselineBody.length();
+                int baselineStatus = baselineResponse.code();
 
                 String truePayload = "1' AND '1'='1";
                 String trueUrl = injectPayload(url, paramName, encodeUrl(truePayload));
@@ -156,6 +157,7 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                 try (Response trueResponse = context.getHttpClient().get(trueUrl)) {
                     String trueBody = context.getHttpClient().getBodyAsString(trueResponse);
                     int trueLength = trueBody.length();
+                    int trueStatus = trueResponse.code();
 
                     String falsePayload = "1' AND '1'='2";
                     String falseUrl = injectPayload(url, paramName, encodeUrl(falsePayload));
@@ -163,16 +165,28 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                     try (Response falseResponse = context.getHttpClient().get(falseUrl)) {
                         String falseBody = context.getHttpClient().getBodyAsString(falseResponse);
                         int falseLength = falseBody.length();
+                        int falseStatus = falseResponse.code();
 
-                        if (Math.abs(trueLength - baselineLength) < 100 &&
-                            Math.abs(falseLength - baselineLength) > 500) {
-                            addVulnerability(createVulnerability(
-                                    Severity.CRITICAL,
-                                    "Boolean-based blind SQL Injection detected in parameter '" + paramName + "'. " +
-                                    "The application responds differently to true and false SQL conditions.",
-                                    url
-                            ));
-                            ConsoleUI.warning("Boolean-based SQL Injection found: " + " " + paramName);
+                        ConsoleUI.debug("Boolean test - baseline: " + baselineLength +
+                                       ", true: " + trueLength + ", false: " + falseLength);
+
+                        if (baselineStatus == 200 && trueStatus == 200 && falseStatus == 200) {
+                            int trueDiff = Math.abs(trueLength - baselineLength);
+                            int falseDiff = Math.abs(falseLength - baselineLength);
+                            int trueFalseDiff = Math.abs(trueLength - falseLength);
+
+                            double baselineTrueRatio = baselineLength > 0 ? (double) trueDiff / baselineLength : 0;
+                            double baselineFalseRatio = baselineLength > 0 ? (double) falseDiff / baselineLength : 0;
+
+                            if (baselineTrueRatio < 0.05 && baselineFalseRatio > 0.20 && trueFalseDiff > 500) {
+                                addVulnerability(createVulnerability(
+                                        Severity.CRITICAL,
+                                        "Boolean-based blind SQL Injection detected in parameter '" + paramName + "'. " +
+                                        "The application responds differently to true and false SQL conditions.",
+                                        url
+                                ));
+                                ConsoleUI.warning("Boolean-based SQL Injection found: " + " " + paramName);
+                            }
                         }
                     }
                 }
@@ -247,6 +261,7 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
             try (Response baselineResponse = context.getHttpClient().post(form.action(), form.parameters())) {
                 String baselineBody = context.getHttpClient().getBodyAsString(baselineResponse);
                 int baselineLength = baselineBody.length();
+                int baselineStatus = baselineResponse.code();
 
                 Map<String, String> trueParams = new HashMap<>(form.parameters());
                 trueParams.put(paramName, "1' AND '1'='1");
@@ -254,6 +269,7 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                 try (Response trueResponse = context.getHttpClient().post(form.action(), trueParams)) {
                     String trueBody = context.getHttpClient().getBodyAsString(trueResponse);
                     int trueLength = trueBody.length();
+                    int trueStatus = trueResponse.code();
 
                     Map<String, String> falseParams = new HashMap<>(form.parameters());
                     falseParams.put(paramName, "1' AND '1'='2");
@@ -261,16 +277,28 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
                     try (Response falseResponse = context.getHttpClient().post(form.action(), falseParams)) {
                         String falseBody = context.getHttpClient().getBodyAsString(falseResponse);
                         int falseLength = falseBody.length();
+                        int falseStatus = falseResponse.code();
 
-                        if (Math.abs(trueLength - baselineLength) < 100 &&
-                            Math.abs(falseLength - baselineLength) > 500) {
-                            addVulnerability(createVulnerability(
-                                    Severity.CRITICAL,
-                                    "Boolean-based blind SQL Injection detected in POST parameter '" + paramName + "'. " +
-                                    "The application responds differently to true and false SQL conditions.",
-                                    form.action() + " (POST)"
-                            ));
-                            ConsoleUI.warning("Boolean-based SQL Injection found in POST: " + paramName);
+                        ConsoleUI.debug("Boolean POST test - baseline: " + baselineLength +
+                                       ", true: " + trueLength + ", false: " + falseLength);
+
+                        if (baselineStatus == 200 && trueStatus == 200 && falseStatus == 200) {
+                            int trueDiff = Math.abs(trueLength - baselineLength);
+                            int falseDiff = Math.abs(falseLength - baselineLength);
+                            int trueFalseDiff = Math.abs(trueLength - falseLength);
+
+                            double baselineTrueRatio = baselineLength > 0 ? (double) trueDiff / baselineLength : 0;
+                            double baselineFalseRatio = baselineLength > 0 ? (double) falseDiff / baselineLength : 0;
+
+                            if (baselineTrueRatio < 0.05 && baselineFalseRatio > 0.20 && trueFalseDiff > 500) {
+                                addVulnerability(createVulnerability(
+                                        Severity.CRITICAL,
+                                        "Boolean-based blind SQL Injection detected in POST parameter '" + paramName + "'. " +
+                                        "The application responds differently to true and false SQL conditions.",
+                                        form.action() + " (POST)"
+                                ));
+                                ConsoleUI.warning("Boolean-based SQL Injection found in POST: " + paramName);
+                            }
                         }
                     }
                 }
@@ -322,13 +350,32 @@ public class SqlInjectionTest extends BaseVulnerabilityTest {
         }
 
         String lowerBody = body.toLowerCase();
-        if (lowerBody.contains("sql") && (
-                lowerBody.contains("error") ||
-                lowerBody.contains("syntax") ||
-                lowerBody.contains("exception") ||
-                lowerBody.contains("warning"))) {
-            ConsoleUI.debug("Generic SQL error detected in response body");
-            return true;
+
+        String[] specificPatterns = {
+            "sql.*error",
+            "error.*sql",
+            "syntax.*error.*sql",
+            "sql.*syntax.*error",
+            "sql.*exception",
+            "exception.*sql",
+            "mysql.*error",
+            "postgresql.*error",
+            "oracle.*error",
+            "sqlserver.*error",
+            "sqlite.*error",
+            "database.*error.*query",
+            "query.*error",
+            "unclosed.*quot",
+            "unterminated.*string",
+            "invalid.*sql",
+            "sql.*warning"
+        };
+
+        for (String specificPattern : specificPatterns) {
+            if (Pattern.compile(specificPattern, Pattern.CASE_INSENSITIVE).matcher(lowerBody).find()) {
+                ConsoleUI.debug("Specific SQL error pattern detected: " + specificPattern);
+                return true;
+            }
         }
 
         return false;
