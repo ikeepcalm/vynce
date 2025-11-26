@@ -28,6 +28,7 @@ public class ScanProgress implements ProgressCallback {
     private final Queue<VulnerabilityNotification> recentNotifications = new LinkedList<>();
 
     private final int totalTests;
+    private final boolean verbose;
 
     private final AtomicInteger completedCount = new AtomicInteger(0);
     private final AtomicInteger totalVulnerabilities = new AtomicInteger(0);
@@ -38,16 +39,26 @@ public class ScanProgress implements ProgressCallback {
     private volatile boolean running = false;
 
     public ScanProgress(int totalTests) {
-        this(totalTests, System.out);
+        this(totalTests, false, System.out);
     }
 
-    public ScanProgress(int totalTests, PrintStream out) {
+    public ScanProgress(int totalTests, boolean verbose) {
+        this(totalTests, verbose, System.out);
+    }
+
+    public ScanProgress(int totalTests, boolean verbose, PrintStream out) {
         this.totalTests = totalTests;
+        this.verbose = verbose;
         this.out = out;
     }
 
     public void start() {
         running = true;
+
+        if (verbose) {
+            ConsoleUI.info("Starting vulnerability scan...");
+            return;
+        }
 
         refreshExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "ProgressDisplay-Refresh");
@@ -65,6 +76,13 @@ public class ScanProgress implements ProgressCallback {
 
     public void stop() {
         running = false;
+
+        if (verbose) {
+            out.println();
+            ConsoleUI.success("Scan completed! (" + completedCount.get() + "/" + totalTests +
+                              " tests, " + totalVulnerabilities.get() + " vulnerabilities found)");
+            return;
+        }
 
         if (refreshExecutor != null) {
             refreshExecutor.shutdown();
@@ -225,6 +243,10 @@ public class ScanProgress implements ProgressCallback {
         ConsoleUI.debug("Starting test: " + testName + " with " + totalSteps + " steps");
         ProgressTracker tracker = new ProgressTracker(testName, totalSteps);
         activeTests.put(testName, tracker);
+
+        if (verbose) {
+            ConsoleUI.info("Starting test: " + testName + " (" + totalSteps + " checks)");
+        }
     }
 
     @Override
@@ -246,6 +268,13 @@ public class ScanProgress implements ProgressCallback {
             tracker.markCompleted(vulnerabilitiesFound);
             completedTests.put(testName, tracker);
             completedCount.incrementAndGet();
+
+            if (verbose) {
+                String vulnMessage = vulnerabilitiesFound > 0
+                        ? " - Found " + vulnerabilitiesFound + " vulnerability/vulnerabilities"
+                        : " - No vulnerabilities found";
+                ConsoleUI.success("Completed test: " + testName + vulnMessage);
+            }
         }
     }
 
@@ -256,6 +285,11 @@ public class ScanProgress implements ProgressCallback {
         ProgressTracker tracker = activeTests.get(testName);
         if (tracker != null) {
             tracker.setVulnerabilitiesFound(tracker.getVulnerabilitiesFound() + 1);
+        }
+
+        if (verbose) {
+            ConsoleUI.warning("Vulnerability found: [" + severity + "] " +
+                              (description.length() > 60 ? description.substring(0, 57) + "..." : description));
         }
 
         recentNotifications.add(new VulnerabilityNotification(severity, description));

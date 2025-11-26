@@ -117,6 +117,8 @@ public class ScanCommand implements Callable<Integer> {
 
         displayConfiguration();
 
+        boolean isVerbose = parent != null && parent.verbose;
+
         ScanConfig config = ScanConfig.builder()
                 .threads(threads)
                 .crawlDepth(depth)
@@ -124,10 +126,10 @@ public class ScanCommand implements Callable<Integer> {
                 .followRedirects(followRedirects)
                 .userAgent(userAgent)
                 .requestDelay(requestDelay)
-                .verbose(parent != null && parent.verbose)
+                .verbose(isVerbose)
                 .build();
 
-        ScanProgress progress = new ScanProgress(testTypes.size());
+        ScanProgress progress = new ScanProgress(testTypes.size(), isVerbose);
         VulnerabilityScanner vulnerabilityScanner = new VulnerabilityScanner(targetUrl, testTypes, config);
 
         Thread shutdownHook = setupShutdownHook(vulnerabilityScanner, progress);
